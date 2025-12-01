@@ -414,36 +414,59 @@
         return `${formatted} <img src="assets/svg/money-icon.svg" style="width:16px;height:16px;vertical-align:middle;margin-left:2px;" alt="money">`;
     }
     
-    function getMoneyPanelTargetPoint(moneyPanel) {
-        if (!moneyPanel) {
-            return null;
+    function getMoneyPanelTargetPoint() {
+        // Сначала пытаемся найти элемент #money-amount
+        const moneyAmountEl = document.getElementById('money-amount');
+        if (moneyAmountEl) {
+            // Принудительно обновляем layout, чтобы получить актуальные координаты
+            moneyAmountEl.offsetHeight;
+            
+            const rect = moneyAmountEl.getBoundingClientRect();
+            // Проверяем, что элемент виден и имеет размеры
+            if (rect.width > 0 && rect.height > 0) {
+                const style = window.getComputedStyle(moneyAmountEl);
+                if (style.display !== 'none' && style.visibility !== 'hidden') {
+                    return {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2
+                    };
+                }
+            }
         }
         
-        const candidates = [
-            document.getElementById('money-amount'),
-            moneyPanel.querySelector('[data-balance="money"]'),
-            moneyPanel.querySelector('.money-amount'),
-            moneyPanel.querySelector('.balance-value'),
-            moneyPanel.querySelector('.panel-value'),
-            moneyPanel.querySelector('span')
-        ];
+        // Если не нашли элемент баланса, ищем панель денег
+        const moneyPanel = document.getElementById('money-panel');
+        if (moneyPanel) {
+            // Принудительно обновляем layout
+            moneyPanel.offsetHeight;
+            
+            const rect = moneyPanel.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                // Пытаемся найти span внутри панели (элемент баланса)
+                const span = moneyPanel.querySelector('span#money-amount');
+                if (span) {
+                    span.offsetHeight; // Принудительное обновление layout
+                    const spanRect = span.getBoundingClientRect();
+                    if (spanRect.width > 0 && spanRect.height > 0) {
+                        return {
+                            x: spanRect.left + spanRect.width / 2,
+                            y: spanRect.top + spanRect.height / 2
+                        };
+                    }
+                }
+                // Используем центр панели, но смещаем вправо к тексту баланса
+                return {
+                    x: rect.left + rect.width * 0.7, // Смещаем вправо, где обычно текст
+                    y: rect.top + rect.height / 2
+                };
+            }
+        }
         
-        const targetEl = candidates.find(el => el && el.offsetParent !== null && (el.offsetWidth > 0 || el.offsetHeight > 0)) || moneyPanel;
-        const rect = targetEl.getBoundingClientRect();
+        // Fallback - примерные координаты панели денег (left: 10px, top: 10px)
         return {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
+            x: 60,
+            y: 25
         };
-    }
-    
-    function getViewportOffsets() {
-        if (window.visualViewport) {
-            return {
-                x: window.visualViewport.offsetLeft || 0,
-                y: window.visualViewport.offsetTop || 0
-            };
-        }
-        return { x: 0, y: 0 };
     }
     
     // Функция анимации вылета денег из круга в панель денег
@@ -454,18 +477,31 @@
             return;
         }
         
-        // Получаем позиции круга и панели денег
+        // Получаем позиции круга
         const circleRect = circleElement.getBoundingClientRect();
-        const viewportOffsets = getViewportOffsets();
-        const targetPoint = getMoneyPanelTargetPoint(moneyPanel) || { x: window.innerWidth * 0.1, y: 40 };
         
         // Начальная позиция (центр круга)
-        const startX = circleRect.left + circleRect.width / 2 + viewportOffsets.x;
-        const startY = circleRect.top + circleRect.height / 2 + viewportOffsets.y;
+        const startX = circleRect.left + circleRect.width / 2;
+        const startY = circleRect.top + circleRect.height / 2;
         
-        // Конечная позиция (центр иконки или панели денег)
-        const endX = targetPoint.x + viewportOffsets.x;
-        const endY = targetPoint.y + viewportOffsets.y;
+        // Получаем координаты цели (синхронно, но с принудительным обновлением layout)
+        const targetPoint = getMoneyPanelTargetPoint();
+        let endX = targetPoint.x;
+        let endY = targetPoint.y;
+        
+        // Дополнительная проверка: если координаты подозрительно маленькие, используем панель
+        if (endX < 10 || endY < 10) {
+            const panelRect = moneyPanel.getBoundingClientRect();
+            if (panelRect.width > 0 && panelRect.height > 0) {
+                // Используем правую часть панели, где находится текст баланса
+                endX = panelRect.left + panelRect.width * 0.75;
+                endY = panelRect.top + panelRect.height / 2;
+            } else {
+                // Последний fallback
+                endX = 60;
+                endY = 25;
+            }
+        }
         
         // Количество денежных иконок для эффектности
         const moneyCount = Math.min(Math.max(Math.floor(amount / 500), 10), 25);
