@@ -414,6 +414,38 @@
         return `${formatted} <img src="assets/svg/money-icon.svg" style="width:16px;height:16px;vertical-align:middle;margin-left:2px;" alt="money">`;
     }
     
+    function getMoneyPanelTargetPoint(moneyPanel) {
+        if (!moneyPanel) {
+            return null;
+        }
+        
+        const candidates = [
+            document.getElementById('money-amount'),
+            moneyPanel.querySelector('[data-balance="money"]'),
+            moneyPanel.querySelector('.money-amount'),
+            moneyPanel.querySelector('.balance-value'),
+            moneyPanel.querySelector('.panel-value'),
+            moneyPanel.querySelector('span')
+        ];
+        
+        const targetEl = candidates.find(el => el && el.offsetParent !== null && (el.offsetWidth > 0 || el.offsetHeight > 0)) || moneyPanel;
+        const rect = targetEl.getBoundingClientRect();
+        return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
+    }
+    
+    function getViewportOffsets() {
+        if (window.visualViewport) {
+            return {
+                x: window.visualViewport.offsetLeft || 0,
+                y: window.visualViewport.offsetTop || 0
+            };
+        }
+        return { x: 0, y: 0 };
+    }
+    
     // Функция анимации вылета денег из круга в панель денег
     function animateMoneyCollection(circleElement, amount, callback) {
         const moneyPanel = document.getElementById('money-panel');
@@ -424,33 +456,16 @@
         
         // Получаем позиции круга и панели денег
         const circleRect = circleElement.getBoundingClientRect();
-        const panelRect = moneyPanel.getBoundingClientRect();
-        
-        // Ищем точку назначения как можно точнее
-        let targetRect = panelRect;
-        const moneyAmountElement = document.getElementById('money-amount');
-        if (moneyAmountElement) {
-            const amountRect = moneyAmountElement.getBoundingClientRect();
-            if (amountRect.width > 0 && amountRect.height > 0) {
-                targetRect = amountRect;
-            }
-        } else {
-            const moneyIcon = moneyPanel.querySelector('i.fa-money');
-            if (moneyIcon) {
-                const iconRect = moneyIcon.getBoundingClientRect();
-                if (iconRect.width > 0 && iconRect.height > 0) {
-                    targetRect = iconRect;
-                }
-            }
-        }
+        const viewportOffsets = getViewportOffsets();
+        const targetPoint = getMoneyPanelTargetPoint(moneyPanel) || { x: window.innerWidth * 0.1, y: 40 };
         
         // Начальная позиция (центр круга)
-        const startX = circleRect.left + circleRect.width / 2;
-        const startY = circleRect.top + circleRect.height / 2;
+        const startX = circleRect.left + circleRect.width / 2 + viewportOffsets.x;
+        const startY = circleRect.top + circleRect.height / 2 + viewportOffsets.y;
         
         // Конечная позиция (центр иконки или панели денег)
-        const endX = targetRect.left + targetRect.width / 2;
-        const endY = targetRect.top + targetRect.height / 2;
+        const endX = targetPoint.x + viewportOffsets.x;
+        const endY = targetPoint.y + viewportOffsets.y;
         
         // Количество денежных иконок для эффектности
         const moneyCount = Math.min(Math.max(Math.floor(amount / 500), 10), 25);
@@ -782,7 +797,7 @@
             // Позиционируем индикатор относительно экрана
             indicator.style.position = 'fixed';
             indicator.style.top = (zoneRect.top - 20) + 'px';
-            indicator.style.right = (window.innerWidth - zoneRect.right + 25) + 'px';
+            indicator.style.right = (window.innerWidth - zoneRect.right + 35) + 'px';
             indicator.style.zIndex = '1000';
             
             document.body.appendChild(indicator);
@@ -887,7 +902,7 @@
             // Мгновенно обновляем позицию без анимации
             indicator.style.transition = 'none';
             indicator.style.top = (zoneRect.top - 20) + 'px';
-            indicator.style.right = (window.innerWidth - zoneRect.right + 25) + 'px';
+            indicator.style.right = (window.innerWidth - zoneRect.right + 35) + 'px';
         });
     }
     
