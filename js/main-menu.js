@@ -391,6 +391,200 @@
         saveBuildingsData();
         updateProfitIndicators();
     }
+    
+    function formatProfitLabel(amount) {
+        let formatted = '0';
+        if (amount > 0) {
+            if (amount >= 1000000) {
+                formatted = (amount / 1000000).toFixed(1);
+                if (formatted.endsWith('.0')) {
+                    formatted = formatted.slice(0, -2);
+                }
+                formatted += 'M';
+            } else if (amount >= 1000) {
+                formatted = (amount / 1000).toFixed(1);
+                if (formatted.endsWith('.0')) {
+                    formatted = formatted.slice(0, -2);
+                }
+                formatted += 'k';
+            } else {
+                formatted = amount.toString();
+            }
+        }
+        return `${formatted} <img src="assets/svg/money-icon.svg" style="width:16px;height:16px;vertical-align:middle;margin-left:2px;" alt="money">`;
+    }
+    
+    // Функция анимации вылета денег из круга в панель денег
+    function animateMoneyCollection(circleElement, amount, callback) {
+        const moneyPanel = document.getElementById('money-panel');
+        if (!moneyPanel) {
+            if (callback) callback();
+            return;
+        }
+        
+        // Получаем позиции круга и панели денег
+        const circleRect = circleElement.getBoundingClientRect();
+        const panelRect = moneyPanel.getBoundingClientRect();
+        
+        // Ищем точку назначения как можно точнее
+        let targetRect = panelRect;
+        const moneyAmountElement = document.getElementById('money-amount');
+        if (moneyAmountElement) {
+            const amountRect = moneyAmountElement.getBoundingClientRect();
+            if (amountRect.width > 0 && amountRect.height > 0) {
+                targetRect = amountRect;
+            }
+        } else {
+            const moneyIcon = moneyPanel.querySelector('i.fa-money');
+            if (moneyIcon) {
+                const iconRect = moneyIcon.getBoundingClientRect();
+                if (iconRect.width > 0 && iconRect.height > 0) {
+                    targetRect = iconRect;
+                }
+            }
+        }
+        
+        // Начальная позиция (центр круга)
+        const startX = circleRect.left + circleRect.width / 2;
+        const startY = circleRect.top + circleRect.height / 2;
+        
+        // Конечная позиция (центр иконки или панели денег)
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        
+        // Количество денежных иконок для эффектности
+        const moneyCount = Math.min(Math.max(Math.floor(amount / 500), 10), 25);
+        const spreadDuration = 600; // Фаза разлёта (увеличено)
+        const pauseDuration = 300; // Пауза после разлёта
+        const collectDuration = 1200; // Фаза полёта к панели (увеличено)
+        
+        // Создаем контейнер для всех денег
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.pointerEvents = 'none';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        
+        let completedCount = 0;
+        
+        // Создаем денежные иконки
+        for (let i = 0; i < moneyCount; i++) {
+            const moneyIcon = document.createElement('img');
+            moneyIcon.src = 'assets/svg/money-icon.svg';
+            moneyIcon.style.position = 'fixed';
+            moneyIcon.style.width = '24px';
+            moneyIcon.style.height = '24px';
+            moneyIcon.style.left = startX + 'px';
+            moneyIcon.style.top = startY + 'px';
+            moneyIcon.style.transform = 'translate(-50%, -50%)';
+            moneyIcon.style.opacity = '0';
+            moneyIcon.style.transition = 'opacity 0.2s ease';
+            moneyIcon.style.zIndex = '10000';
+            container.appendChild(moneyIcon);
+            
+            // Показываем иконку
+            requestAnimationFrame(() => {
+                moneyIcon.style.opacity = '1';
+            });
+            
+            // Угол разлёта для каждой иконки (равномерно по кругу с небольшим рандомом)
+            const baseAngle = (Math.PI * 2 * i) / moneyCount;
+            const spreadAngle = baseAngle + (Math.random() - 0.5) * 0.6;
+            const spreadRadius = 60 + Math.random() * 40;
+            
+            // Конечная точка разлёта
+            const spreadEndX = startX + Math.cos(spreadAngle) * spreadRadius;
+            const spreadEndY = startY + Math.sin(spreadAngle) * spreadRadius;
+            
+            // Случайная задержка для асинхронности
+            const delay = Math.random() * 300;
+            
+            const iconSpreadDuration = spreadDuration * (0.85 + Math.random() * 0.5);
+            const iconPauseDuration = pauseDuration * (0.7 + Math.random() * 0.6);
+            const iconCollectDuration = collectDuration * (0.85 + Math.random() * 0.5);
+            const iconTotalDuration = iconSpreadDuration + iconPauseDuration + iconCollectDuration;
+            
+            setTimeout(() => {
+                const startTime = performance.now();
+                
+                function animate(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const spreadProgress = Math.min(elapsed / iconSpreadDuration, 1);
+                    const pauseStart = iconSpreadDuration;
+                    const collectStart = iconSpreadDuration + iconPauseDuration;
+                    const totalProgress = Math.min(elapsed / iconTotalDuration, 1);
+                    
+                    if (spreadProgress < 1) {
+                        // ФАЗА 1: Разлёт из круга
+                        const easeSpread = 1 - Math.pow(1 - spreadProgress, 2); // Ease out
+                        const currentX = startX + (spreadEndX - startX) * easeSpread;
+                        const currentY = startY + (spreadEndY - startY) * easeSpread;
+                        
+                        moneyIcon.style.left = currentX + 'px';
+                        moneyIcon.style.top = currentY + 'px';
+                        
+                        // Вращение при разлёте
+                        const rotation = spreadProgress * 360;
+                        moneyIcon.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+                        
+                        requestAnimationFrame(animate);
+                    } else if (elapsed < collectStart) {
+                        // ПАУЗА: Деньги остаются на месте разлёта
+                        moneyIcon.style.left = spreadEndX + 'px';
+                        moneyIcon.style.top = spreadEndY + 'px';
+                        moneyIcon.style.transform = `translate(-50%, -50%) rotate(360deg)`;
+                        
+                        requestAnimationFrame(animate);
+                    } else if (totalProgress < 1) {
+                        // ФАЗА 2: Полёт к панели денег
+                        const collectElapsed = elapsed - collectStart;
+                        const collectProgress = Math.min(collectElapsed / iconCollectDuration, 1);
+                        const easeCollect = 1 - Math.pow(1 - collectProgress, 3); // Ease out cubic
+                        
+                        // Текущая позиция (от точки разлёта к панели)
+                        const currentX = spreadEndX + (endX - spreadEndX) * easeCollect;
+                        const currentY = spreadEndY + (endY - spreadEndY) * easeCollect;
+                        
+                        moneyIcon.style.left = currentX + 'px';
+                        moneyIcon.style.top = currentY + 'px';
+                        
+                        // Вращение и уменьшение при полёте
+                        const rotation = 360 + collectProgress * 240;
+                        const scale = 1.0 - collectProgress * 0.6;
+                        moneyIcon.style.transform = `translate(-50%, -50%) rotate(${rotation}deg) scale(${scale})`;
+                        
+                        requestAnimationFrame(animate);
+                    } else {
+                        // Анимация исчезновения при достижении цели
+                        moneyIcon.style.transition = 'opacity 0.1s ease, transform 0.1s ease';
+                        moneyIcon.style.opacity = '0';
+                        moneyIcon.style.transform = `translate(-50%, -50%) scale(0.1)`;
+                        
+                        setTimeout(() => {
+                            moneyIcon.remove();
+                            completedCount++;
+                            // Удаляем контейнер и вызываем callback, когда все иконки завершились
+                            if (completedCount >= moneyCount) {
+                                setTimeout(() => {
+                                    if (container.parentNode) {
+                                        container.remove();
+                                    }
+                                    if (callback) callback();
+                                }, 100);
+                            }
+                        }, 100);
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            }, delay);
+        }
+    }
+    
     // Функция создания и обновления индикаторов сотрудников
     function updateProfitIndicators() {
         // Если индикаторы подавлены (после свайпа) — ничего не делаем
@@ -544,11 +738,14 @@
             circleWrapper.appendChild(innerLayer);
             circleWrapper.appendChild(avatarLayer);
             
+            // Текущее значение накопленной прибыли
+            const currentAccumulatedProfit = calculateAccumulatedProfit(buildingType);
+            
             // Элемент для отображения накопленной прибыли
             const profitLabel = document.createElement('div');
             profitLabel.className = 'profit-amount-label';
             profitLabel.id = `profit-amount-${buildingType}`;
-            profitLabel.innerHTML = '0 <img src="assets/svg/money-icon.svg" style="width:10px;height:10px;vertical-align:middle;margin-left:2px;" alt="money">';
+            profitLabel.innerHTML = formatProfitLabel(currentAccumulatedProfit);
             
             indicator.appendChild(circleWrapper);
             indicator.appendChild(profitLabel);
@@ -557,26 +754,35 @@
             circleWrapper.addEventListener('click', () => {
                 const accumulatedProfit = calculateAccumulatedProfit(buildingType);
                 if (accumulatedProfit > 0) {
-                    const playerMoney = getPlayerMoney();
-                    // Забираем накопленную прибыль
-                    setPlayerMoney(playerMoney + accumulatedProfit);
+                    const profitToCollect = accumulatedProfit;
                     
-                    // Сбрасываем накопленную прибыль
+                    // Моментально обнуляем накопление и обновляем лейбл
                     building.accumulatedProfit = 0;
                     building.lastCollectTime = Date.now();
-                    
-                    // Сохраняем данные
                     saveBuildingsData();
                     
-                    // Обновляем индикаторы
-                    updateProfitIndicators();
+                    if (window._profitRingState && window._profitRingState[buildingType] && window._profitRingState[buildingType].profitLabelEl) {
+                        window._profitRingState[buildingType].profitLabelEl.innerHTML = formatProfitLabel(0);
+                    } else if (profitLabel) {
+                        profitLabel.innerHTML = formatProfitLabel(0);
+                    }
+                    
+                    // Запускаем анимацию вылета денег
+                    animateMoneyCollection(circleWrapper, profitToCollect, () => {
+                        // После завершения анимации начисляем деньги
+                        const playerMoney = getPlayerMoney();
+                        setPlayerMoney(playerMoney + profitToCollect);
+                        
+                        // Обновляем индикаторы
+                        updateProfitIndicators();
+                    });
                 }
             });
             
             // Позиционируем индикатор относительно экрана
             indicator.style.position = 'fixed';
-            indicator.style.top = (zoneRect.top + 5) + 'px';
-            indicator.style.right = (window.innerWidth - zoneRect.right + 5) + 'px';
+            indicator.style.top = (zoneRect.top - 20) + 'px';
+            indicator.style.right = (window.innerWidth - zoneRect.right + 25) + 'px';
             indicator.style.zIndex = '1000';
             
             document.body.appendChild(indicator);
@@ -616,25 +822,7 @@
                     // Обновляем накопленную прибыль
                     if (s.profitLabelEl) {
                         const accumulatedProfit = calculateAccumulatedProfit(key);
-                        let formattedProfit = '';
-                        if (accumulatedProfit === 0) {
-                            formattedProfit = '0';
-                        } else if (accumulatedProfit >= 1000000) {
-                            formattedProfit = (accumulatedProfit / 1000000).toFixed(1) + 'M';
-                            // Убираем .0 в конце если есть
-                            if (formattedProfit.endsWith('.0M')) {
-                                formattedProfit = formattedProfit.replace('.0M', 'M');
-                            }
-                        } else if (accumulatedProfit >= 1000) {
-                            formattedProfit = (accumulatedProfit / 1000).toFixed(1) + 'k';
-                            // Убираем .0 в конце если есть
-                            if (formattedProfit.endsWith('.0k')) {
-                                formattedProfit = formattedProfit.replace('.0k', 'k');
-                            }
-                        } else {
-                            formattedProfit = accumulatedProfit.toString();
-                        }
-                        s.profitLabelEl.innerHTML = formattedProfit + ' <img src="assets/svg/money-icon.svg" style="width:10px;height:10px;vertical-align:middle;margin-left:2px;" alt="money">';
+                        s.profitLabelEl.innerHTML = formatProfitLabel(accumulatedProfit);
                     }
                 });
                 window._profitRingRAF = requestAnimationFrame(animateRings);
@@ -698,8 +886,8 @@
             
             // Мгновенно обновляем позицию без анимации
             indicator.style.transition = 'none';
-            indicator.style.top = (zoneRect.top + 5) + 'px';
-            indicator.style.right = (window.innerWidth - zoneRect.right + 5) + 'px';
+            indicator.style.top = (zoneRect.top - 20) + 'px';
+            indicator.style.right = (window.innerWidth - zoneRect.right + 25) + 'px';
         });
     }
     
