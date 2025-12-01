@@ -1,0 +1,703 @@
+/**
+ * CSS СТИЛИ ДЛЯ ШАБЛОНОВ ЗДАНИЙ
+ * Стили для всех панелей зданий и их элементов
+ */
+
+/* === ОСНОВНЫЕ СТИЛИ ПАНЕЛЕЙ === */
+.building-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.building-panel.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.building-panel-container {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-radius: 20px;
+    padding: 0;
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border: 2px solid #3498db;
+}
+
+/* === ЗАГОЛОВОК ПАНЕЛИ === */
+.building-panel-header {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    padding: 20px;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #2980b9;
+}
+
+.building-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.building-icon {
+    width: 32px;
+    height: 32px;
+    filter: brightness(0) invert(1);
+}
+
+.building-panel-title h2 {
+    color: white;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* === СОДЕРЖИМОЕ ПАНЕЛИ === */
+.building-panel-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* === КАРТОЧКИ === */
+.income-card,
+.upgrade-card,
+.employee-card,
+.print-card,
+.delivery-card,
+.purchase-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.card-header h3 {
+    color: white;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.level-badge {
+    background: #e74c3c;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* === ИНФОРМАЦИЯ О ДОХОДЕ === */
+.income-info {
+    margin-bottom: 16px;
+}
+
+.income-amount {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.income-value {
+    color: #2ecc71;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.income-period {
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.profit-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profit-label {
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.profit-amount {
+    color: #f39c12;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* === КНОПКИ === */
+.collect-btn,
+.upgrade-btn,
+.employee-btn,
+.start-print-btn,
+.expedite-btn,
+.purchase-btn {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    border-radius: 20px;
+    padding: 12px 18px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.collect-btn.active,
+.upgrade-btn.active,
+.employee-btn,
+.start-print-btn.active,
+.expedite-btn,
+.purchase-btn.active {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #3498db;
+}
+
+.collect-btn.active:hover,
+.upgrade-btn.active:hover,
+.employee-btn:hover,
+.start-print-btn.active:hover,
+.expedite-btn:hover,
+.purchase-btn.active:hover {
+    background: rgba(52, 152, 219, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.collect-btn.disabled,
+.upgrade-btn.disabled,
+.start-print-btn.disabled,
+.purchase-btn.disabled {
+    background: rgba(0, 0, 0, 0.3);
+    color: #7f8c8d;
+    cursor: not-allowed;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* === ОТОБРАЖЕНИЕ СТОИМОСТИ === */
+.cost-display {
+    background: #555;
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.cost-display img {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) invert(1);
+}
+
+.cost-display span {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* === ИНФОРМАЦИЯ ОБ УЛУЧШЕНИИ === */
+.upgrade-info {
+    margin-bottom: 12px;
+}
+
+.upgrade-cost {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.cost-amount {
+    color: #f39c12;
+    font-weight: 600;
+}
+
+/* === СОТРУДНИКИ === */
+.employee-count {
+    background: #9b59b6;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.assigned-employee {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.employee-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.employee-info {
+    flex: 1;
+}
+
+.employee-name {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.employee-level,
+.employee-skill {
+    color: #bdc3c7;
+    font-size: 12px;
+}
+
+.no-employee {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 60px;
+    margin-bottom: 12px;
+}
+
+.no-employee-text {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* === ПЕЧАТЬ === */
+.print-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.print-status.printing {
+    background: #e74c3c;
+    color: white;
+}
+
+.print-status.idle {
+    background: #2ecc71;
+    color: white;
+}
+
+.print-progress {
+    margin-bottom: 16px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progress-type {
+    color: white;
+    font-weight: 600;
+}
+
+.progress-quantity {
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-time {
+    text-align: center;
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.print-actions {
+    margin-top: 12px;
+}
+
+.print-menu {
+    margin-bottom: 16px;
+}
+
+.print-options {
+    margin-bottom: 16px;
+}
+
+.print-type-selector {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.print-type-selector label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+.print-type-selector input[type="radio"] {
+    accent-color: #3498db;
+}
+
+.print-quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+}
+
+.print-quantity-selector select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 14px;
+}
+
+/* === ДОСТАВКА === */
+.delivery-count {
+    background: #e67e22;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.delivery-orders {
+    margin-bottom: 12px;
+}
+
+.delivery-order {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.order-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.order-type {
+    color: white;
+    font-weight: 600;
+}
+
+.order-quantity {
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.order-reward {
+    color: #2ecc71;
+    font-weight: 600;
+}
+
+.no-deliveries {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+}
+
+.no-deliveries-text {
+    color: #7f8c8d;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.generate-order-btn {
+    background: #3498db;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.generate-order-btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+/* === ПОКУПКА === */
+.purchase-info {
+    margin-bottom: 20px;
+}
+
+.purchase-info h3 {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.purchase-info p {
+    color: #bdc3c7;
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.purchase-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+.detail-item .cost {
+    color: #f39c12;
+    font-weight: 600;
+}
+
+.detail-item .income {
+    color: #2ecc71;
+    font-weight: 600;
+}
+
+.detail-item .workers {
+    color: #9b59b6;
+    font-weight: 600;
+}
+
+/* === МЕНЮ ДОСТАВКИ === */
+.delivery-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.delivery-menu.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.delivery-menu-container {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-radius: 20px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border: 2px solid #e67e22;
+}
+
+.delivery-menu-header {
+    background: linear-gradient(135deg, #e67e22, #d35400);
+    padding: 20px;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #d35400;
+}
+
+.delivery-menu-header h3 {
+    color: white;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.delivery-menu-content {
+    padding: 20px;
+}
+
+.active-orders h4 {
+    color: white;
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-details {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.complete-order-btn {
+    background: #2ecc71;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.complete-order-btn:hover {
+    background: #27ae60;
+    transform: translateY(-1px);
+}
+
+.no-orders {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 20px;
+}
+
+.no-orders-text {
+    color: #7f8c8d;
+    font-size: 16px;
+    font-style: italic;
+}
+
+/* === АДАПТИВНОСТЬ === */
+@media (max-width: 768px) {
+    .building-panel-container {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .building-panel-content {
+        padding: 16px;
+    }
+    
+    .building-panel-header {
+        padding: 16px;
+    }
+    
+    .building-panel-title h2 {
+        font-size: 18px;
+    }
+    
+    .income-value {
+        font-size: 20px;
+    }
+    
+    .print-type-selector {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .delivery-menu-container {
+        width: 95%;
+        max-height: 90vh;
+    }
+}

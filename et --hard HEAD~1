@@ -1,0 +1,7 @@
+[33mabe1ae0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Improve building indicator positioning for Telegram Mini App
+[33m4277343[m Fix building indicator circles positioning for Telegram Mini App
+[33ma83c580[m Remove excessive bottom padding in Telegram Mini App building panels
+[33mf263b88[m Add deep scroll functionality for Telegram Mini App building panels
+[33m961d1c9[m Fix dynamic building panels scroll bug in Telegram Mini App
+[33m8d9a695[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m астройка зон кликов: сделал зоны видимыми для настройки, изменил размеры и позиции зон
+[33m49d5b0a[m[33m ([m[1;31morigin/main[m[33m)[m первый коммит

@@ -1,0 +1,422 @@
+@import url('tokens.css');
+
+:root{--header-h:calc(96px + env(safe-area-inset-top, 0px));}
+
+body{font:400 var(--font-size-base)/1.4 "Segoe UI",sans-serif;color:#333;background:var(--color-bg);} 
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:var(--space-m) var(--space-l);border:none;border-radius:var(--radius-m);font-weight:600;font-size:var(--font-size-base);cursor:pointer;transition:background .2s,transform .05s;user-select:none}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--color-primary);color:#fff;}
+.btn-danger{background:var(--color-error);color:#fff;}
+.btn-disabled{opacity:.5;cursor:default}
+
+/* Cards */
+.card{background:var(--color-surface);border-radius:var(--radius-m);padding:var(--space-l);box-shadow:0 2px 4px rgba(0,0,0,.15);
+  color:#fff;}
+
+/* Scrollbar (узкий серый) */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#666;border-radius:3px}
+
+/* Bottom navigation bar */
+#bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;
+  height:80px;
+  padding:12px 12px 20px 12px;
+  display:flex;align-items:center;justify-content:space-around;
+  background:rgba(42,42,42,0.9);
+  border-top-left-radius:16px;
+  border-top-right-radius:16px;
+  border-top:1px solid rgba(58,58,58,0.8);
+  box-shadow:0 -2px 6px rgba(0,0,0,.15);
+  backdrop-filter:blur(6px);
+  z-index:10;
+}
+#bottom-nav button{
+  flex:1;
+  height:100%;border:none;background:none;color:#666;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;font-size:12px;font-weight:600;cursor:pointer;
+  transition:color 0.2s ease;
+}
+#bottom-nav button .icon{width:24px;height:24px;margin-bottom:4px;filter:brightness(0.7);transition:filter 0.2s ease;}
+#bottom-nav button.active{color:#fff;}
+#bottom-nav button.active .icon{filter:brightness(1);}
+
+
+
+/* UI root wrapper */
+#ui-root{position:fixed;inset:0;max-width:440px;margin:0 auto;pointer-events:none;z-index:50;}
+#ui-root *{pointer-events:auto;}
+
+/* hide old panels */
+#money-panel,#credits-panel{display:none!important;}
+
+/* Side bar update */
+.side-bar{position:fixed;margin-right:-16px;margin-top:calc(40px + env(safe-area-inset-top, 0px));right:0;width:80px;height:auto;background:transparent;border-top-left-radius:40px;border-bottom-left-radius:40px;padding:20px 0;display:flex;flex-direction:column;align-items:center;gap:0;}
+.side-btn{width:80px;height:80px;background:transparent;border:none;border-radius:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background-color 0.2s ease;}
+.side-btn img{width:38px;height:38px;}
+.side-btn.active{background:#fff;color:#4D4D4D;}
+.side-btn.panel-active{background:#fff;color:#4D4D4D;}
+.side-sep{width:24px;height:1px;background:#6d6d6d;margin:8px 0;}
+
+/* Info panel with PNG background */
+.info-stack{position:fixed !important;top:calc(80px + env(safe-area-inset-top, 0px)) !important;left:10px !important;width:auto;z-index:20;}
+#info-panel.info-stack{position:fixed !important;top:calc(80px + env(safe-area-inset-top, 0px)) !important;left:10px !important;}
+.info-panel-bg{
+  width:160px;
+  height:140px;
+  background:transparent;
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position:top left;
+  position:relative;
+  border-radius:12px;
+  overflow:hidden;
+  transition:all 0.3s ease;
+  padding:4px;
+}
+.info-value{
+  font-family:'Segoe UI',Arial,sans-serif;
+  text-shadow:1px 1px 2px rgba(0,0,0,0.8);
+  user-select:none;
+}
+.info-icon{
+  transition:filter 0.2s ease;
+  /* Улучшение качества SVG */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: auto;
+  /* Сглаживание для лучшего качества */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Улучшение четкости */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Принудительное использование GPU */
+  will-change: transform;
+  /* Дополнительные улучшения качества */
+  filter: saturate(1.05) contrast(1.08) brightness(1.03);
+  shape-rendering: geometricPrecision;
+}
+
+/* Дополнительные стили для всех SVG в левой панели */
+.info-panel-bg img {
+  /* Улучшение качества рендеринга */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: auto;
+  /* Сглаживание */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Принудительное использование GPU */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+  /* Улучшение четкости */
+  filter: saturate(1.05) contrast(1.08) brightness(1.03);
+  shape-rendering: geometricPrecision;
+}
+.p2p-icon{
+  border-radius:50%;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.info-item-bg{
+  transition:all 0.2s ease;
+}
+.rbc-bg{
+  border:1px solid #ffd700 !important;
+}
+.bc-bg{
+  border:1px solid transparent;
+}
+.ref-bg{
+  border:1px solid transparent;
+}
+.p2p-bg{
+  background:linear-gradient(45deg, #ff0000, #800080) padding-box, linear-gradient(45deg, #ff0000, #800080) border-box;
+  border:2px solid transparent;
+}
+.info-item{
+  user-select:none;
+}
+.add-credits-btn{
+  transition:transform 0.1s ease;
+}
+.add-credits-btn:hover{
+  transform:scale(1.1);
+}
+.add-credits-btn:active{
+  transform:scale(0.95);
+}
+
+/* Header */
+.app-header{position:fixed;top:0;left:0;right:0;height:calc(96px + env(safe-area-inset-top, 0px));background:#4D4D4D;padding:calc(12px + env(safe-area-inset-top, 0px)) 4px 12px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:15;}
+.app-logo{width:120px;height:auto;justify-content:center;}
+/* Новая панель новостей в правом верхнем углу */
+.news-corner{position:fixed;top:calc(10px + env(safe-area-inset-top, 0px));right:10px;width:280px;max-height:200px;background:rgba(77,77,77,0.95);border-radius:12px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,0.3);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);z-index:25;opacity:1;transition:opacity 0.3s ease;}
+
+.news-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.2);}
+
+.news-label{font-weight:700;font-size:12px;letter-spacing:0.02em;text-transform:uppercase;color:#fff;}
+
+.news-close{background:none;border:none;color:#fff;font-size:14px;cursor:pointer;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background 0.2s ease;}
+
+.news-close:hover{background:rgba(255,255,255,0.1);}
+
+.news-content{max-height:140px;overflow-y:auto;}
+
+.news-item{padding:4px 0;}
+
+.news-text{font-size:11px;line-height:1.4;color:#fff;opacity:0.9;display:block;}
+
+/* Старые стили (удалены) */
+.news-bar{position:absolute;left:0;right:0;bottom:0;padding:0 16px;height:14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#fff;background:#4D4D4D;}
+
+/* Адаптивность для панели новостей */
+@media (max-width: 768px) {
+    .news-corner{width:240px;top:calc(8px + env(safe-area-inset-top, 0px));right:8px;}
+    .news-text{font-size:10px;}
+}
+
+@media (max-width: 480px) {
+    .news-corner{width:200px;top:calc(5px + env(safe-area-inset-top, 0px));right:5px;padding:10px;}
+    .news-label{font-size:11px;}
+    .news-text{font-size:9px;}
+}
+
+/* Адаптивность для правой панели */
+@media (max-width: 768px) {
+    .side-bar{margin-top:calc(50px + env(safe-area-inset-top, 0px));padding:10px 0;}
+    .side-btn{width:70px;height:70px;border-radius:35px;}
+    .side-btn img{width:32px;height:32px;}
+    .side-sep{margin:8px 0;}
+}
+
+@media (max-width: 480px) {
+    .side-bar{margin-top:calc(40px + env(safe-area-inset-top, 0px));padding:8px 0;}
+    .side-btn{width:60px;height:60px;border-radius:30px;}
+    .side-btn img{width:28px;height:28px;}
+    .side-sep{margin:5px 0;}
+}
+
+@media (max-width: 360px) {
+    .side-bar{margin-top:calc(30px + env(safe-area-inset-top, 0px));padding:5px 0;}
+    .side-btn{width:55px;height:55px;border-radius:27px;}
+    .side-btn img{width:25px;height:25px;}
+    .side-sep{margin:3px 0;}
+}
+.info-ic{width:14px;height:14px;opacity:0.5;}
+
+/* push body down below header */
+#three-canvas{margin-top:var(--header-h);}
+
+/* Telegram Mini App specific styles */
+.telegram-mini-app .info-stack {
+    top: 165px !important; /* 80px + 85px Telegram offset - увеличен для избежания пересечения с кнопкой закрыть */
+}
+
+/* Динамические панели зданий для Telegram Mini App */
+.telegram-mini-app .building-panel-container {
+    max-height: 50vh !important; /* Еще больше уменьшаем высоту для Telegram Mini App */
+    padding-bottom: 20px !important; /* Минимальный отступ снизу */
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+}
+
+.telegram-mini-app .building-panel-container > div {
+    padding-bottom: 30px !important; /* Минимальный отступ для контента */
+}
+
+@media (max-width: 360px) {
+    .telegram-mini-app .building-panel-container { 
+        max-height: 40vh !important; 
+        padding-bottom: 15px !important;
+    }
+    .telegram-mini-app .building-panel-container > div {
+        padding-bottom: 25px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .telegram-mini-app .building-panel-container { 
+        max-height: 45vh !important; 
+        padding-bottom: 18px !important;
+    }
+    .telegram-mini-app .building-panel-container > div {
+        padding-bottom: 28px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .telegram-mini-app .building-panel-container { 
+        max-height: 50vh !important; 
+        padding-bottom: 20px !important;
+    }
+    .telegram-mini-app .building-panel-container > div {
+        padding-bottom: 30px !important;
+    }
+}
+
+.telegram-mini-app .side-bar {
+    margin-top: 130px !important; /* 60px + 70px Telegram offset */
+    right: 8px !important;
+    left: auto !important;
+    width: 80px !important;
+}
+
+.telegram-mini-app .news-corner {
+    top: 80px !important; /* 10px + 70px Telegram offset */
+}
+
+.telegram-mini-app .app-header {
+    height: 166px !important; /* 96px + 70px Telegram offset */
+    padding-top: 82px !important; /* 12px + 70px Telegram offset */
+}
+
+.telegram-mini-app #three-canvas {
+    margin-top: 166px !important; /* 96px + 70px Telegram offset */
+}
+
+/* Кнопки разработки для Telegram Mini App */
+.telegram-mini-app #reset-data {
+    top: 75px !important; /* 5px + 70px Telegram offset */
+}
+
+.telegram-mini-app #add-money-test {
+    top: 105px !important; /* 35px + 70px Telegram offset */
+}
+
+/* Адаптивные стили для Telegram Mini App */
+@media (max-width: 360px) {
+    .telegram-mini-app .info-stack { top: 155px !important; /* Увеличен отступ для маленьких экранов */ }
+    .telegram-mini-app .side-bar { margin-top: 100px !important; right: 8px !important; left: auto !important; width: 55px !important; }
+    .telegram-mini-app .news-corner { top: 70px !important; }
+    .telegram-mini-app .app-header { height: 156px !important; padding-top: 72px !important; }
+    .telegram-mini-app #three-canvas { margin-top: 156px !important; }
+    .telegram-mini-app #reset-data { top: 65px !important; }
+    .telegram-mini-app #add-money-test { top: 95px !important; }
+}
+
+@media (max-width: 480px) {
+    .telegram-mini-app .info-stack { top: 165px !important; /* Увеличен отступ для средних экранов */ }
+    .telegram-mini-app .side-bar { margin-top: 110px !important; right: 8px !important; left: auto !important; width: 60px !important; }
+    .telegram-mini-app .news-corner { top: 80px !important; }
+    .telegram-mini-app .app-header { height: 166px !important; padding-top: 82px !important; }
+    .telegram-mini-app #three-canvas { margin-top: 166px !important; }
+    .telegram-mini-app #reset-data { top: 75px !important; }
+    .telegram-mini-app #add-money-test { top: 105px !important; }
+}
+
+@media (max-width: 768px) {
+    .telegram-mini-app .info-stack { top: 175px !important; /* Увеличен отступ для больших экранов */ }
+    .telegram-mini-app .side-bar { margin-top: 120px !important; right: 8px !important; left: auto !important; width: 70px !important; }
+    .telegram-mini-app .news-corner { top: 80px !important; }
+    .telegram-mini-app .app-header { height: 176px !important; padding-top: 92px !important; }
+    .telegram-mini-app #three-canvas { margin-top: 176px !important; }
+    .telegram-mini-app #reset-data { top: 85px !important; }
+    .telegram-mini-app #add-money-test { top: 115px !important; }
+}
+
+/* Дополнительные медиа-запросы для очень маленьких экранов */
+@media (max-width: 320px) {
+    .telegram-mini-app .info-stack { top: 150px !important; /* Еще больший отступ для очень маленьких экранов */ }
+}
+
+/* Для экранов с высоким разрешением */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .telegram-mini-app .info-stack { top: 185px !important; /* Отступ для планшетов */ }
+}
+
+/* bottom nav active dim others */
+#bottom-nav button{opacity:1;}
+#bottom-nav button.active{opacity:1;color:#fff;}
+
+/* Phone panel */
+.phone-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:260px;height:480px;background:#4D4D4D;border-radius:24px;padding:16px;display:flex;flex-direction:column;align-items:center;z-index:120!important;box-shadow:0 4px 16px rgba(0,0,0,.4);} 
+.phone-close{position:absolute;top:8px;right:8px;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;}
+.phone-home{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:40px;width:100%;}
+.phone-app{width:92px;height:92px;background:#6d6d6d;border:none;border-radius:20px;color:#fff;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;}
+.phone-app .icon{width:36px;height:36px;margin-bottom:4px;}
+.phone-screen{width:100%;flex:1;display:flex;flex-direction:column;align-items:center;color:#fff;}
+.phone-screen h3{margin:24px 0 16px;font-size:18px;}
+.phone-back{background:#1976d2;border:none;border-radius:8px;color:#fff;padding:6px 12px;cursor:pointer;}
+#orders-container .order-item{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;background:#6d6d6d;border-radius:8px;padding:6px 8px;margin-bottom:4px;font-size:12px;}
+.order-item input[type=checkbox]{width:16px;height:16px;accent-color:#4caf50;}
+
+/* Bookeio layout */
+.bookeio-grid{display:flex;flex-direction:column;width:100%;gap:8px;}
+.bookeio-column{width:100%;display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.15);border-radius:8px;padding:6px;}
+.bookeio-column h4{margin:4px 0;font-size:12px;letter-spacing:.5px;}
+.app-item-img{width:60px;height:60px;margin:4px 0;}
+.slider-row{display:flex;align-items:center;width:100%;gap:4px;}
+.slider-row input[type=range]{flex:1;}
+.cost-label{font-size:12px;min-width:44px;text-align:right;}
+.order-btn{margin-top:4px;background:#000;border:2px solid #fff;color:#fff;padding:4px;border-radius:4px;font-size:12px;width:100%;cursor:pointer;}
+.qty-label{font-size:12px;min-width:48px;text-align:center;}
+
+/* Base layer for persistent UI */
+.panel{z-index:110!important;}
+/* Modal/opened panels above base UI */
+.modal{position:fixed!important;z-index:130!important;}
+
+/* Notification red dot */
+.red-dot{position:absolute;top:4px;right:4px;width:10px;height:10px;border-radius:5px;background:#ff1744;display:none;}
+
+/* Explicit z-index for each modal panel */
+#phone-panel,
+#shop-panel,
+#upgrade-panel,
+#factory-upgrade-panel,
+#city-panel,
+#offline-panel,
+#crate-overlay,
+#profile-panel {
+  z-index:130!important;
+}
+
+#messages-app{display:flex;flex-direction:column;align-items:center;width:100%;}
+#messages-container{flex:1;width:100%;overflow-y:auto;padding-right:4px;box-sizing:border-box;}
+#messages-container::-webkit-scrollbar{width:4px;} 
+#messages-container::-webkit-scrollbar-thumb{background:#888;border-radius:2px;} 
+
+/* === PANEL ANIMATIONS === */
+/* Анимация появления панелей снизу вверх */
+@keyframes slideInFromBottom {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutToBottom {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+
+
+/* Классы для анимации панелей */
+.panel.modal {
+    transition: opacity 0.3s ease;
+}
+
+.panel.modal.slide-in {
+    animation: slideInFromBottom 0.4s ease-out forwards;
+}
+
+.panel.modal.slide-out {
+    animation: slideOutToBottom 0.3s ease-in forwards;
+}
+
+ 
