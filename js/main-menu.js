@@ -415,93 +415,108 @@
     }
     
     function getMoneyPanelTargetPoint() {
-        // Сначала пытаемся найти элемент #money-amount
-        const moneyAmountEl = document.getElementById('money-amount');
-        if (moneyAmountEl) {
-            // Принудительно обновляем layout, чтобы получить актуальные координаты
-            moneyAmountEl.offsetHeight;
+        // Основной путь — info-panel
+        const infoPanel = document.getElementById('info-panel');
+        if (infoPanel) {
+            // Ищем SVG-иконку денег в указанном порядке приоритета
+            let moneyIcon = null;
             
-            const rect = moneyAmountEl.getBoundingClientRect();
-            // Проверяем, что элемент виден и имеет размеры
-            if (rect.width > 0 && rect.height > 0) {
-                const style = window.getComputedStyle(moneyAmountEl);
-                if (style.display !== 'none' && style.visibility !== 'hidden') {
+            // 1. img[src*="bc-icon.svg"] — приоритет
+            moneyIcon = infoPanel.querySelector('img[src*="bc-icon.svg"]');
+            
+            // 2. .bc-bg img.info-icon
+            if (!moneyIcon) {
+                moneyIcon = infoPanel.querySelector('.bc-bg img.info-icon');
+            }
+            
+            // 3. .bc-bg img
+            if (!moneyIcon) {
+                moneyIcon = infoPanel.querySelector('.bc-bg img');
+            }
+            
+            // 4. img[src*="money"]
+            if (!moneyIcon) {
+                moneyIcon = infoPanel.querySelector('img[src*="money"]');
+            }
+            
+            // 5. img.info-icon
+            if (!moneyIcon) {
+                moneyIcon = infoPanel.querySelector('img.info-icon');
+            }
+            
+            // Если иконка найдена и видима, используем центр её getBoundingClientRect()
+            if (moneyIcon && moneyIcon.offsetParent !== null) {
+                const iconRect = moneyIcon.getBoundingClientRect();
+                if (iconRect.width > 0 && iconRect.height > 0) {
                     return {
-                        x: rect.left + rect.width / 2,
-                        y: rect.top + rect.height / 2
+                        x: iconRect.left + iconRect.width / 2,
+                        y: iconRect.top + iconRect.height / 2
                     };
                 }
             }
-        }
-        
-        // Если не нашли элемент баланса, ищем панель денег
-        const moneyPanel = document.getElementById('money-panel');
-        if (moneyPanel) {
-            // Принудительно обновляем layout
-            moneyPanel.offsetHeight;
             
-            const rect = moneyPanel.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-                // Пытаемся найти span внутри панели (элемент баланса)
-                const span = moneyPanel.querySelector('span#money-amount');
-                if (span) {
-                    span.offsetHeight; // Принудительное обновление layout
-                    const spanRect = span.getBoundingClientRect();
-                    if (spanRect.width > 0 && spanRect.height > 0) {
-                        return {
-                            x: spanRect.left + spanRect.width / 2,
-                            y: spanRect.top + spanRect.height / 2
-                        };
-                    }
-                }
-                // Используем центр панели, но смещаем вправо к тексту баланса
+            // Fallback 2 — ячейка .bc-bg
+            const bcBg = infoPanel.querySelector('.bc-bg');
+            if (bcBg && bcBg.offsetParent !== null) {
+                const bcRect = bcBg.getBoundingClientRect();
+                // Определяем размер иконки (20px на мобильных, 24px на десктопе)
+                const isMobile = window.innerWidth <= 768;
+                const iconSize = isMobile ? 20 : 24;
+                // Учитываем отступы и размер иконки
                 return {
-                    x: rect.left + rect.width * 0.7, // Смещаем вправо, где обычно текст
-                    y: rect.top + rect.height / 2
+                    x: bcRect.left + iconSize / 2 + (isMobile ? 8 : 10),
+                    y: bcRect.top + bcRect.height / 2
                 };
             }
+            
+            // Fallback 3 — позиция панели
+            const infoRect = infoPanel.getBoundingClientRect();
+            const isMobile = window.innerWidth <= 768;
+            return {
+                x: infoRect.left + (isMobile ? 25 : 30),
+                y: infoRect.top + 70
+            };
         }
         
-        // Fallback - примерные координаты панели денег (left: 10px, top: 10px)
-        return {
-            x: 60,
-            y: 25
-        };
+        // Fallback 1 — money-panel
+        const moneyPanel = document.getElementById('money-panel');
+        if (moneyPanel) {
+            // Ищем иконку FontAwesome: i.fa-solid.fa-money или i.fa-money
+            let moneyIconElement = moneyPanel.querySelector('i.fa-solid.fa-money');
+            if (!moneyIconElement) {
+                moneyIconElement = moneyPanel.querySelector('i.fa-money');
+            }
+            
+            if (moneyIconElement && moneyIconElement.offsetParent !== null) {
+                const iconRect = moneyIconElement.getBoundingClientRect();
+                if (iconRect.width > 0 && iconRect.height > 0) {
+                    return {
+                        x: iconRect.left + iconRect.width / 2,
+                        y: iconRect.top + iconRect.height / 2
+                    };
+                }
+            }
+            
+            // Если иконка не найдена, используем центр панели
+            const panelRect = moneyPanel.getBoundingClientRect();
+            return {
+                x: panelRect.left + panelRect.width / 2,
+                y: panelRect.top + panelRect.height / 2
+            };
+        }
+        
+        // Последний fallback — фиксированная позиция
+        return { x: window.innerWidth * 0.1, y: 40 };
     }
     
     // Функция анимации вылета денег из круга в панель денег
     function animateMoneyCollection(circleElement, amount, callback) {
-        const moneyPanel = document.getElementById('money-panel');
-        if (!moneyPanel) {
-            if (callback) callback();
-            return;
-        }
-        
         // Получаем позиции круга
         const circleRect = circleElement.getBoundingClientRect();
         
         // Начальная позиция (центр круга)
         const startX = circleRect.left + circleRect.width / 2;
         const startY = circleRect.top + circleRect.height / 2;
-        
-        // Получаем координаты цели (синхронно, но с принудительным обновлением layout)
-        const targetPoint = getMoneyPanelTargetPoint();
-        let endX = targetPoint.x;
-        let endY = targetPoint.y;
-        
-        // Дополнительная проверка: если координаты подозрительно маленькие, используем панель
-        if (endX < 10 || endY < 10) {
-            const panelRect = moneyPanel.getBoundingClientRect();
-            if (panelRect.width > 0 && panelRect.height > 0) {
-                // Используем правую часть панели, где находится текст баланса
-                endX = panelRect.left + panelRect.width * 0.75;
-                endY = panelRect.top + panelRect.height / 2;
-            } else {
-                // Последний fallback
-                endX = 60;
-                endY = 25;
-            }
-        }
         
         // Количество денежных иконок для эффектности
         const moneyCount = Math.min(Math.max(Math.floor(amount / 500), 10), 25);
@@ -562,12 +577,24 @@
             setTimeout(() => {
                 const startTime = performance.now();
                 
+                // Инициализируем целевую точку
+                let targetPoint = getMoneyPanelTargetPoint();
+                let endX = targetPoint.x;
+                let endY = targetPoint.y;
+                
                 function animate(currentTime) {
                     const elapsed = currentTime - startTime;
                     const spreadProgress = Math.min(elapsed / iconSpreadDuration, 1);
                     const pauseStart = iconSpreadDuration;
                     const collectStart = iconSpreadDuration + iconPauseDuration;
                     const totalProgress = Math.min(elapsed / iconTotalDuration, 1);
+                    
+                    // Пересчитываем позицию в начале анимации (когда progress < 0.1)
+                    if (spreadProgress < 0.1) {
+                        targetPoint = getMoneyPanelTargetPoint();
+                        endX = targetPoint.x;
+                        endY = targetPoint.y;
+                    }
                     
                     if (spreadProgress < 1) {
                         // ФАЗА 1: Разлёт из круга
