@@ -859,7 +859,12 @@
             
             // Позиционируем индикатор относительно экрана
             indicator.style.position = 'fixed';
-            indicator.style.top = (zoneRect.top - 20) + 'px';
+            // Для завода круг размещается в нижней части здания (исключение)
+            if (buildingType === 'factory') {
+                indicator.style.top = (zoneRect.bottom + 50) + 'px';
+            } else {
+                indicator.style.top = (zoneRect.top - 20) + 'px';
+            }
             indicator.style.right = (window.innerWidth - zoneRect.right + 35) + 'px';
             indicator.style.zIndex = '1000';
             
@@ -964,7 +969,12 @@
             
             // Мгновенно обновляем позицию без анимации
             indicator.style.transition = 'none';
-            indicator.style.top = (zoneRect.top - 20) + 'px';
+            // Для завода круг размещается в нижней части здания (исключение)
+            if (buildingType === 'factory') {
+                indicator.style.top = (zoneRect.bottom + 50) + 'px';
+            } else {
+                indicator.style.top = (zoneRect.top - 20) + 'px';
+            }
             indicator.style.right = (window.innerWidth - zoneRect.right + 35) + 'px';
         });
     }
@@ -2985,7 +2995,12 @@
                     if (!zone) return;
                     const zoneRect = zone.getBoundingClientRect();
                     state.el.style.position = 'fixed';
-                    state.el.style.top = (zoneRect.top + 5) + 'px';
+                    // Для завода круг размещается в нижней части здания (исключение)
+                    if (buildingType === 'factory') {
+                        state.el.style.top = (zoneRect.bottom + 50) + 'px';
+                    } else {
+                        state.el.style.top = (zoneRect.top + 5) + 'px';
+                    }
                     state.el.style.right = (window.innerWidth - zoneRect.right + 5) + 'px';
                 });
             } catch (_) {}

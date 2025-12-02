@@ -650,20 +650,31 @@ function initializeCirclePositions() {
         incomeBank.style.top  = (sy-160)+'px'; // ещё выше над прогрессом
     }
 
-    // Позиционируем кружки над заводом
-    const factoryObjRef = scene.getObjectByName('factory');
-    if(factoryObjRef && factoryProgressDiv && factoryBankDiv){
-        const top2=factoryObjRef.position.clone();
-        const halfH2=(factoryObjRef.geometry.parameters.height*factoryObjRef.scale.y)/2;
-        top2.y+=halfH2;
-        top2.project(camera);
-        let sx2=(top2.x*0.5+0.5)*window.innerWidth;
-        let sy2=(-top2.y*0.5+0.5)*window.innerHeight;
+    // Позиционируем кружки над заводом (только если не на главной карте)
+    const mapContainer = document.getElementById('map-container');
+    const isOnMainMenu = mapContainer && mapContainer.style.display !== 'none';
+    
+    if (!isOnMainMenu) {
+        const factoryObjRef = scene.getObjectByName('factory');
+        if(factoryObjRef && factoryProgressDiv && factoryBankDiv){
+            const top2=factoryObjRef.position.clone();
+            const halfH2=(factoryObjRef.geometry.parameters.height*factoryObjRef.scale.y)/2;
+            top2.y+=halfH2;
+            top2.project(camera);
+            let sx2=(top2.x*0.5+0.5)*window.innerWidth;
+            let sy2=(-top2.y*0.5+0.5)*window.innerHeight;
 
-        factoryProgressDiv.style.left=(sx2-35)+'px';
-        factoryProgressDiv.style.top =(sy2-85)+'px';
-        factoryBankDiv.style.left=(sx2-35)+'px';
-        factoryBankDiv.style.top =(sy2-160)+'px';
+            factoryProgressDiv.style.left=(sx2-35)+'px';
+            factoryProgressDiv.style.top =(sy2-85)+'px';
+            factoryBankDiv.style.left=(sx2-35)+'px';
+            factoryBankDiv.style.top =(sy2-160)+'px';
+        }
+    } else {
+        // На главной карте скрываем 3D круги завода
+        if(factoryProgressDiv && factoryBankDiv){
+            factoryProgressDiv.style.display='none';
+            factoryBankDiv.style.display='none';
+        }
     }
 
     // Позиционируем кружок над хранилищем
@@ -968,20 +979,31 @@ function animate() {
         incomeBank.style.top  = (sy-160)+'px'; // ещё выше над прогрессом
     }
 
-    // позиционируем кружки над заводом
-    const factoryObjRef = scene.getObjectByName('factory');
-    if(factoryObjRef && factoryProgressDiv && factoryBankDiv){
-        const top2=factoryObjRef.position.clone();
-        const halfH2=(factoryObjRef.geometry.parameters.height*factoryObjRef.scale.y)/2;
-        top2.y+=halfH2;
-        top2.project(camera);
-        let sx2=(top2.x*0.5+0.5)*window.innerWidth;
-        let sy2=(-top2.y*0.5+0.5)*window.innerHeight;
+    // позиционируем кружки над заводом (только если не на главной карте)
+    const mapContainer = document.getElementById('map-container');
+    const isOnMainMenu = mapContainer && mapContainer.style.display !== 'none';
+    
+    if (!isOnMainMenu) {
+        const factoryObjRef = scene.getObjectByName('factory');
+        if(factoryObjRef && factoryProgressDiv && factoryBankDiv){
+            const top2=factoryObjRef.position.clone();
+            const halfH2=(factoryObjRef.geometry.parameters.height*factoryObjRef.scale.y)/2;
+            top2.y+=halfH2;
+            top2.project(camera);
+            let sx2=(top2.x*0.5+0.5)*window.innerWidth;
+            let sy2=(-top2.y*0.5+0.5)*window.innerHeight;
 
-        factoryProgressDiv.style.left=(sx2-35)+'px';
-        factoryProgressDiv.style.top =(sy2-85)+'px';
-        factoryBankDiv.style.left=(sx2-35)+'px';
-        factoryBankDiv.style.top =(sy2-160)+'px';
+            factoryProgressDiv.style.left=(sx2-35)+'px';
+            factoryProgressDiv.style.top =(sy2-85)+'px';
+            factoryBankDiv.style.left=(sx2-35)+'px';
+            factoryBankDiv.style.top =(sy2-160)+'px';
+        }
+    } else {
+        // На главной карте скрываем 3D круги завода
+        if(factoryProgressDiv && factoryBankDiv){
+            factoryProgressDiv.style.display='none';
+            factoryBankDiv.style.display='none';
+        }
     }
 
     // позиционируем кружок над хранилищем
