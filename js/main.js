@@ -393,7 +393,6 @@ const bookeTasks = [
 ];
 
 // placeholders to избежать ReferenceError до их создания позже
-let factoryProgressDiv, factoryBankDiv;
 
 // === ПЕРЕМЕННЫЕ ПЛАТФОРМ УДАЛЕНЫ ===
 // Переменные платформ больше не нужны, так как используется новое главное меню с PNG
@@ -650,32 +649,6 @@ function initializeCirclePositions() {
         incomeBank.style.top  = (sy-160)+'px'; // ещё выше над прогрессом
     }
 
-    // Позиционируем кружки над заводом (только если не на главной карте)
-    const mapContainer = document.getElementById('map-container');
-    const isOnMainMenu = mapContainer && mapContainer.style.display !== 'none';
-    
-    if (!isOnMainMenu) {
-        const factoryObjRef = scene.getObjectByName('factory');
-        if(factoryObjRef && factoryProgressDiv && factoryBankDiv){
-            const top2=factoryObjRef.position.clone();
-            const halfH2=(factoryObjRef.geometry.parameters.height*factoryObjRef.scale.y)/2;
-            top2.y+=halfH2;
-            top2.project(camera);
-            let sx2=(top2.x*0.5+0.5)*window.innerWidth;
-            let sy2=(-top2.y*0.5+0.5)*window.innerHeight;
-
-            factoryProgressDiv.style.left=(sx2-35)+'px';
-            factoryProgressDiv.style.top =(sy2-85)+'px';
-            factoryBankDiv.style.left=(sx2-35)+'px';
-            factoryBankDiv.style.top =(sy2-160)+'px';
-        }
-    } else {
-        // На главной карте скрываем 3D круги завода
-        if(factoryProgressDiv && factoryBankDiv){
-            factoryProgressDiv.style.display='none';
-            factoryBankDiv.style.display='none';
-        }
-    }
 
     // Позиционируем кружок над хранилищем
     const storObj = scene.getObjectByName('storage');
@@ -979,32 +952,6 @@ function animate() {
         incomeBank.style.top  = (sy-160)+'px'; // ещё выше над прогрессом
     }
 
-    // позиционируем кружки над заводом (только если не на главной карте)
-    const mapContainer = document.getElementById('map-container');
-    const isOnMainMenu = mapContainer && mapContainer.style.display !== 'none';
-    
-    if (!isOnMainMenu) {
-        const factoryObjRef = scene.getObjectByName('factory');
-        if(factoryObjRef && factoryProgressDiv && factoryBankDiv){
-            const top2=factoryObjRef.position.clone();
-            const halfH2=(factoryObjRef.geometry.parameters.height*factoryObjRef.scale.y)/2;
-            top2.y+=halfH2;
-            top2.project(camera);
-            let sx2=(top2.x*0.5+0.5)*window.innerWidth;
-            let sy2=(-top2.y*0.5+0.5)*window.innerHeight;
-
-            factoryProgressDiv.style.left=(sx2-35)+'px';
-            factoryProgressDiv.style.top =(sy2-85)+'px';
-            factoryBankDiv.style.left=(sx2-35)+'px';
-            factoryBankDiv.style.top =(sy2-160)+'px';
-        }
-    } else {
-        // На главной карте скрываем 3D круги завода
-        if(factoryProgressDiv && factoryBankDiv){
-            factoryProgressDiv.style.display='none';
-            factoryBankDiv.style.display='none';
-        }
-    }
 
     // позиционируем кружок над хранилищем
     const storObj = scene.getObjectByName('storage');
@@ -1056,15 +1003,6 @@ function fitCameraToScene() {
     camera.updateProjectionMatrix();
 }
 
-// === PLACEHOLDER UI FOR FACTORY CIRCLES (needed before animate starts)
-factoryProgressDiv=document.createElement('div');
-factoryProgressDiv.id='factory-income-progress';
-factoryProgressDiv.style.cssText='position:absolute;width:70px;height:70px;border-radius:50%;background:conic-gradient(#2196f3 0deg, transparent 0deg);display:none;pointer-events:none;z-index:1;visibility:hidden;';
-document.body.appendChild(factoryProgressDiv);
-factoryBankDiv=document.createElement('div');
-factoryBankDiv.id='factory-income-bank';
-factoryBankDiv.style.cssText='position:absolute;width:70px;height:70px;border-radius:50%;background:#004ba0;display:none;align-items:center;justify-content:center;color:#fff;font-weight:bold;z-index:1;cursor:pointer;';
-document.body.appendChild(factoryBankDiv);
 // Запуск игры откладываем до нажатия "Начать"
 function startGame(){
     try{
@@ -1659,14 +1597,6 @@ safeAddEventListener('btn-build-statue', 'click', () => {
 // === FACTORY BUILDING ===
 let factoryObj=null;
 let factoryProgress=0;
-factoryProgressDiv=document.createElement('div');
-factoryProgressDiv.id='factory-income-progress';
-factoryProgressDiv.style.cssText='position:absolute;width:70px;height:70px;border-radius:50%;background:conic-gradient(#2196f3 0deg, transparent 0deg);display:none;pointer-events:none;z-index:1;visibility:hidden;';
-document.body.appendChild(factoryProgressDiv);
-factoryBankDiv=document.createElement('div');
-factoryBankDiv.id='factory-income-bank';
-factoryBankDiv.style.cssText='position:absolute;width:70px;height:70px;border-radius:50%;background:#004ba0;display:none;align-items:center;justify-content:center;color:#fff;font-weight:bold;z-index:1;cursor:pointer;';
-document.body.appendChild(factoryBankDiv);
 
 let factoryIntermediate=0;
 let factoryUpgrades=0; // future
@@ -1677,7 +1607,6 @@ const factoryRateGrowth=1.15;
 // storage load
 factoryUpgrades=parseInt(localStorage.getItem('f_upCnt')||'0');
 factoryIntermediate=parseFloat(localStorage.getItem('f_interBal')||'0');
-factoryBankDiv.textContent=formatNumber(factoryIntermediate);
 
 function getFactoryIncomePerSecond(){
     if(factoryUpgrades===0) return 0;
@@ -1790,10 +1719,6 @@ function createFactory(){
     factoryObj.position.set(18,3,0); // поднят на половину высоты
     scene.add(factoryObj);
 
-    // show DOM elements
-    factoryProgressDiv.style.display='flex';
-    factoryBankDiv.style.display='flex';
-
     // click handler
     window.addEventListener('pointerdown',(e)=>{
         // Блокируем клики если открыта любая панель
@@ -1806,20 +1731,11 @@ function createFactory(){
         if(ints.length>0){fPanel.style.display='block';fRefreshCost();fUpdateLevelIncome();}
     });
 
-    // после appendChild(factoryProgressDiv)
-    const factoryInner=document.createElement('div');
-    factoryInner.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:#2b2b2b;pointer-events:none;';
-    factoryProgressDiv.appendChild(factoryInner);
-    
-    // Позиционируем круги после создания завода
-    setTimeout(initializeCirclePositions, 100);
 }
 
 // recreate if built earlier
 if(localStorage.getItem('factoryBuilt')==='1'){
     createFactory();
-    // Позиционируем круги после создания завода
-    setTimeout(initializeCirclePositions, 100);
 }
 
 // income loop extension
@@ -1832,17 +1748,9 @@ setInterval(()=>{
             const inc=getFactoryIncomePerSecond()*3;
             factoryIntermediate+=inc;
             window.factoryIntermediate = factoryIntermediate; // обновляем глобальную переменную
-            factoryBankDiv.textContent=formatNumber(factoryIntermediate);
         }
-        // update circle deg
-        const deg = factoryUpgrades===0 ? 0 : (factoryProgress/180)*360;
-        factoryProgressDiv.style.visibility='visible';
-        factoryProgressDiv.style.background=circleBG('factory',deg,EMP_COLORS.default);
     }
 },1000/60);
-
-// collect factory money
-factoryBankDiv.onclick=()=>{if(factoryIntermediate>0){setBalance(getBalance()+factoryIntermediate);factoryIntermediate=0;window.factoryIntermediate=0;factoryBankDiv.textContent='0';fRefreshCost();}};
 
 // === OFFLINE INCOME — удалено ===
 
@@ -1890,7 +1798,7 @@ if(phonePanel){
 
     // открытие/закрытие телефона
     function toggleCircles(show){
-        const list=[incomeProgress,incomeBank,factoryProgressDiv,factoryBankDiv,storageProgressDiv];
+        const list=[incomeProgress,incomeBank,storageProgressDiv];
         list.forEach(el=>{el.style.visibility=show?'visible':'hidden';});
     }
 
@@ -2723,7 +2631,6 @@ window.collectFactoryMoney = function() {
     if (factoryIntermediate > 0) {
         setBalance(getBalance() + factoryIntermediate);
         factoryIntermediate = 0;
-        factoryBankDiv.textContent = formatNumber(factoryIntermediate);
         return true;
     }
     return false;

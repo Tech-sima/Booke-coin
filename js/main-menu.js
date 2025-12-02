@@ -861,7 +861,7 @@
             indicator.style.position = 'fixed';
             // Для завода круг размещается в нижней части здания (исключение)
             if (buildingType === 'factory') {
-                indicator.style.top = (zoneRect.bottom + 50) + 'px';
+                indicator.style.top = (zoneRect.bottom + 60) + 'px';
             } else {
                 indicator.style.top = (zoneRect.top - 20) + 'px';
             }
@@ -971,7 +971,7 @@
             indicator.style.transition = 'none';
             // Для завода круг размещается в нижней части здания (исключение)
             if (buildingType === 'factory') {
-                indicator.style.top = (zoneRect.bottom + 50) + 'px';
+                indicator.style.top = (zoneRect.bottom + 60) + 'px';
             } else {
                 indicator.style.top = (zoneRect.top - 20) + 'px';
             }
@@ -2991,17 +2991,41 @@
                 Object.keys(window._profitRingState).forEach(buildingType => {
                     const state = window._profitRingState[buildingType];
                     if (!state || !state.el) return;
-                    const zone = document.querySelector(`[data-building="${buildingType}"]`);
-                    if (!zone) return;
-                    const zoneRect = zone.getBoundingClientRect();
+                    
+                    // Получаем позицию здания - сначала пробуем из pure-map, потом из building-zone
+                    let zoneRect = null;
+                    if (window.pureMap && typeof window.pureMap.getBuildingPosition === 'function') {
+                        const buildingPos = window.pureMap.getBuildingPosition(buildingType);
+                        if (buildingPos) {
+                            zoneRect = {
+                                left: buildingPos.x - buildingPos.width / 2,
+                                top: buildingPos.y - buildingPos.height / 2,
+                                right: buildingPos.x + buildingPos.width / 2,
+                                bottom: buildingPos.y + buildingPos.height / 2,
+                                width: buildingPos.width,
+                                height: buildingPos.height
+                            };
+                        }
+                    }
+                    
+                    // Fallback: ищем building-zone, если pure-map не доступен
+                    if (!zoneRect) {
+                        const zone = document.querySelector(`.building-zone[data-building="${buildingType}"]`);
+                        if (zone) {
+                            zoneRect = zone.getBoundingClientRect();
+                        } else {
+                            return; // Не можем определить позицию
+                        }
+                    }
+                    
                     state.el.style.position = 'fixed';
                     // Для завода круг размещается в нижней части здания (исключение)
                     if (buildingType === 'factory') {
-                        state.el.style.top = (zoneRect.bottom + 50) + 'px';
+                        state.el.style.top = (zoneRect.bottom + 60) + 'px';
                     } else {
-                        state.el.style.top = (zoneRect.top + 5) + 'px';
+                        state.el.style.top = (zoneRect.top - 20) + 'px';
                     }
-                    state.el.style.right = (window.innerWidth - zoneRect.right + 5) + 'px';
+                    state.el.style.right = (window.innerWidth - zoneRect.right + 35) + 'px';
                 });
             } catch (_) {}
         }
