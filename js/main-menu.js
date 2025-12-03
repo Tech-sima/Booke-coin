@@ -2654,6 +2654,9 @@
             // Сохраняем данные
             saveBuildingsData();
             
+            // Обновляем стоимость улучшения на кнопке
+            updateUpgradeCostDisplay(buildingType);
+            
             // Обновляем индикаторы
             updateProfitIndicators();
             
@@ -3891,6 +3894,9 @@
                 // Сохраняем данные
                 saveBuildingsData();
                 
+                // Обновляем стоимость улучшения на кнопке
+                updateUpgradeCostDisplay('library');
+                
                 // Обновляем индикаторы
                 updateProfitIndicators();
                 
@@ -3943,6 +3949,9 @@
                 
                 // Сохраняем данные
                 saveBuildingsData();
+                
+                // Обновляем стоимость улучшения на кнопке
+                updateUpgradeCostDisplay('factory');
                 
                 // Обновляем индикаторы
                 updateProfitIndicators();
@@ -4095,6 +4104,9 @@
                 
                 // Сохраняем данные
                 saveBuildingsData();
+                
+                // Обновляем стоимость улучшения на кнопке
+                updateUpgradeCostDisplay('print');
                 
                 // Обновляем индикаторы
                 updateProfitIndicators();
@@ -4763,6 +4775,9 @@
                 
                 // Сохраняем данные
                 saveBuildingsData();
+                
+                // Обновляем стоимость улучшения на кнопке
+                updateUpgradeCostDisplay('storage');
                 
                 // Обновляем индикаторы
                 updateProfitIndicators();

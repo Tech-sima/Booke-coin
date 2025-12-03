@@ -2,7 +2,8 @@
 
 :root{--header-h:calc(96px + env(safe-area-inset-top, 0px));}
 
-body{font:400 var(--font-size-base)/1.4 "Segoe UI",sans-serif;color:#333;background:var(--color-bg);} 
+html,body{margin:0;padding:0;width:100%;height:100%;}
+body{font:400 var(--font-size-base)/1.4 "Segoe UI",sans-serif;color:#333;background:transparent;overflow:hidden;} 
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:var(--space-m) var(--space-l);border:none;border-radius:var(--radius-m);font-weight:600;font-size:var(--font-size-base);cursor:pointer;transition:background .2s,transform .05s;user-select:none}

@@ -21,7 +21,8 @@
       }
     </script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+        body { font-family: "Segoe UI", Arial, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
         canvas { display: block; }
         /* Общие стили для панелей */
         .panel{position:absolute;z-index:10;user-select:none}
@@ -113,7 +114,7 @@
         .rbc-tag{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;background:#9e9e9e;padding:2px 6px;border-radius:6px}
         .rbc-tag i{font-style:normal}
         /* --------- НОВОЕ ГЛАВНОЕ МЕНЮ С PNG --------- */
-        #map-container{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:auto;z-index:15;overflow:hidden;background:transparent;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
+        #map-container{position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:auto;z-index:15;overflow:hidden;background:transparent;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;margin:0;padding:0;}
         
         /* Адаптивное главное меню */
         .main-menu-bg{width:100%;height:100%;object-fit:contain;object-position:center center;pointer-events:auto;cursor:default;transition:opacity 0.3s ease;opacity:1;transform-origin:center center;margin:0;}
