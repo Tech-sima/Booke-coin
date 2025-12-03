@@ -190,6 +190,22 @@
         var sy = sh / BASE_HEIGHT;
         // Используем cover, чтобы карта заполняла экран по меньшей стороне без полос
         var s = Math.max(sx, sy);
+        // Увеличиваем базовый зум для мобильных устройств (приближаем карту)
+        var isMobile = sw <= 768 || sh <= 768;
+        if(isMobile){
+            // Адаптивный множитель зума в зависимости от размера экрана
+            // Чем меньше экран, тем больше зум
+            var minDimension = Math.min(sw, sh);
+            var mobileZoomMultiplier;
+            if(minDimension <= 360){
+                mobileZoomMultiplier = 1.4; // Очень маленькие экраны
+            } else if(minDimension <= 480){
+                mobileZoomMultiplier = 1.3; // Маленькие экраны
+            } else {
+                mobileZoomMultiplier = 1.2; // Средние мобильные экраны
+            }
+            s = s * mobileZoomMultiplier;
+        }
         state.scale = Math.max(state.minScale, Math.min(state.maxScale, s));
         // Центрирование
         state.x = (sw - BASE_WIDTH*state.scale) * 0.5;
