@@ -2889,8 +2889,8 @@
                 // Размер изображения в пикселях (натуральный)
                 const iw0 = imageElement.naturalWidth || cw;
                 const ih0 = imageElement.naturalHeight || ch;
-                // Масштаб для object-fit: contain внутри контейнера
-                const fitScale = Math.min(cw / iw0, ch / ih0) || 1;
+                // Масштаб для object-fit: cover - заполняет весь экран без серых полос
+                const fitScale = Math.max(cw / iw0, ch / ih0) || 1;
                 // Итоговый визуальный размер с учётом базового зума слоя
                 const iw = iw0 * fitScale * baseScale;
                 const ih = ih0 * fitScale * baseScale;
@@ -3675,7 +3675,7 @@
         
         const costElement = document.getElementById(`${buildingType}-upgrade-cost`);
         if (costElement) {
-            if (building.level < 5) {
+            if (building.level < 5 && building.upgradeCost > 0) {
                 costElement.textContent = (building.upgradeCost / 1000).toFixed(0) + 'k';
             } else {
                 costElement.textContent = 'Макс';
@@ -4776,14 +4776,19 @@
                 // Сохраняем данные
                 saveBuildingsData();
                 
-                // Обновляем стоимость улучшения на кнопке
+                // Немедленно обновляем стоимость улучшения на кнопке
                 updateUpgradeCostDisplay('storage');
                 
                 // Обновляем индикаторы
                 updateProfitIndicators();
                 
-                // Обновляем отображение в панели
+                // Обновляем отображение в панели (включая стоимость улучшения)
                 updateBuildingPanelDisplay('storage');
+                
+                // Дополнительно обновляем стоимость улучшения с небольшой задержкой для гарантии
+                setTimeout(() => {
+                    updateUpgradeCostDisplay('storage');
+                }, 50);
                 
                 // Обновляем панель города для синхронизации звезд
                 if (window.renderCity) {
