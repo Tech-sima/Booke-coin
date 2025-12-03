@@ -2889,8 +2889,8 @@
                 // Размер изображения в пикселях (натуральный)
                 const iw0 = imageElement.naturalWidth || cw;
                 const ih0 = imageElement.naturalHeight || ch;
-                // Масштаб для object-fit: cover - заполняет весь экран без серых полос
-                const fitScale = Math.max(cw / iw0, ch / ih0) || 1;
+                // Масштаб для object-fit: contain внутри контейнера
+                const fitScale = Math.min(cw / iw0, ch / ih0) || 1;
                 // Итоговый визуальный размер с учётом базового зума слоя
                 const iw = iw0 * fitScale * baseScale;
                 const ih = ih0 * fitScale * baseScale;
