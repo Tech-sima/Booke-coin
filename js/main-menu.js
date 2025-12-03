@@ -3673,14 +3673,16 @@
         const building = buildingsData[buildingType];
         if (!building || !building.isOwned) return;
         
-        const costElement = document.getElementById(`${buildingType}-upgrade-cost`);
-        if (costElement) {
-            if (building.level < 5 && building.upgradeCost > 0) {
-                costElement.textContent = (building.upgradeCost / 1000).toFixed(0) + 'k';
-            } else {
-                costElement.textContent = 'Макс';
-            }
-        }
+        const costElements = document.querySelectorAll(`#${buildingType}-upgrade-cost`);
+        if (costElements.length === 0) return;
+        
+        const costText = (building.level < 5 && building.upgradeCost > 0) 
+            ? (building.upgradeCost / 1000).toFixed(0) + 'k'
+            : 'Макс';
+        
+        costElements.forEach((costElement) => {
+            costElement.textContent = costText;
+        });
     }
     // Функция обновления отображения деталей улучшения
     function updateUpgradeDetailsDisplay(buildingType) {
@@ -3708,13 +3710,14 @@
         }
         
         // Обновляем стоимость улучшения на кнопке для всех зданий
-        const costElement = document.getElementById(`${buildingType}-upgrade-cost`);
-        if (costElement) {
-            if (building.level < 5) {
-                costElement.textContent = (building.upgradeCost / 1000).toFixed(0) + 'k';
-            } else {
-                costElement.textContent = 'Макс';
-            }
+        const costElements = document.querySelectorAll(`#${buildingType}-upgrade-cost`);
+        if (costElements.length > 0) {
+            const costText = building.level < 5 
+                ? (building.upgradeCost / 1000).toFixed(0) + 'k'
+                : 'Макс';
+            costElements.forEach((el) => {
+                el.textContent = costText;
+            });
         }
     }
     
@@ -3743,8 +3746,6 @@
         
         const upgradeBtn = document.getElementById('upgrade-btn');
         if (!upgradeBtn) return;
-        // Проверяем, что здание не достигло максимального уровня
-        if (building.level >= 5) return;
         
         const playerMoney = getPlayerMoney();
         const canAfford = playerMoney >= building.upgradeCost;
@@ -3766,10 +3767,10 @@
             }
             
             // Обновляем стоимость улучшения
-            const costElement = document.getElementById(`${buildingType}-upgrade-cost`);
-            if (costElement) {
+            const costElements = document.querySelectorAll(`#${buildingType}-upgrade-cost`);
+            costElements.forEach((costElement) => {
                 costElement.textContent = (building.upgradeCost / 1000).toFixed(0) + 'k';
-            }
+            });
             
             // Обновляем стиль контейнера с ценой для доступного улучшения
             updateCostContainerStyle(upgradeBtn, true);
@@ -3786,10 +3787,10 @@
             updateCostContainerStyle(upgradeBtn, false);
             
             // Обновляем стоимость на "Макс"
-            const costElement = document.getElementById(`${buildingType}-upgrade-cost`);
-            if (costElement) {
+            const costElements = document.querySelectorAll(`#${buildingType}-upgrade-cost`);
+            costElements.forEach((costElement) => {
                 costElement.textContent = 'Макс';
-            }
+            });
         } else {
             upgradeBtn.style.background = 'rgba(0,0,0,0.3)';
             upgradeBtn.style.cursor = 'not-allowed';
@@ -3800,10 +3801,10 @@
             }
             
             // Обновляем стоимость улучшения
-            const costElement = document.getElementById(`${buildingType}-upgrade-cost`);
-            if (costElement) {
+            const costElements = document.querySelectorAll(`#${buildingType}-upgrade-cost`);
+            costElements.forEach((costElement) => {
                 costElement.textContent = (building.upgradeCost / 1000).toFixed(0) + 'k';
-            }
+            });
             
             // Обновляем стиль контейнера с ценой для недоступного улучшения
             updateCostContainerStyle(upgradeBtn, false);
@@ -3812,7 +3813,8 @@
     
     // Функция обновления стиля контейнера с ценой
     function updateCostContainerStyle(upgradeBtn, isAffordable) {
-        const costContainer = upgradeBtn.querySelector('div[style*="background:rgba(255,255,255,0.15)"]');
+        const costElement = upgradeBtn.querySelector('span[id$="-upgrade-cost"]');
+        const costContainer = costElement ? costElement.parentElement : null;
         if (costContainer) {
             if (isAffordable) {
                 // Стиль для доступного улучшения - черный фон с золотой рамкой
