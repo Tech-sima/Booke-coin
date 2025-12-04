@@ -716,6 +716,7 @@
                 indicator.remove();
             }
         });
+        stopProfitRingAnimation();
         // Сброс состояния анимации кругов, если ранее существовало
         if (!window._profitRingState) { window._profitRingState = {}; }
         window._profitRingState = {};
@@ -894,35 +895,7 @@
         
         // Показываем индикаторы после обновления
         showProfitIndicators();
-        // Запускаем rAF-петлю для анимации, если не запущена
-        if (!window._profitRingRAF) {
-            const animateRings = () => {
-                const state = window._profitRingState || {};
-                const now = performance.now();
-                Object.keys(state).forEach(key => {
-                    const s = state[key];
-                    if (!s || !s.el || !document.body.contains(s.el)) return;
-                    const elapsed = (now - s.start) % s.duration;
-                    const ratio = s.duration > 0 ? (elapsed / s.duration) : 0;
-                    const deg = Math.max(0, Math.min(360, ratio * 360));
-                    // Единый переливающийся фиолетовый градиент
-                    const c1 = '#D9523C';
-                    const c2 = '#C875E6';
-                    const c3 = '#D9523C';
-                    const midDeg = Math.max(0, deg * 0.5);
-                    // Перелив от #D9523C к #C875E6 и обратно к #D9523C в пределах заполненной дуги
-                    s.progressEl.style.background = `conic-gradient(${c1} 0deg, ${c2} ${midDeg}deg, ${c3} ${deg}deg, transparent ${deg}deg)`;
-                    
-                    // Обновляем накопленную прибыль
-                    if (s.profitLabelEl) {
-                        const accumulatedProfit = calculateAccumulatedProfit(key);
-                        s.profitLabelEl.innerHTML = formatProfitLabel(accumulatedProfit);
-                    }
-                });
-                window._profitRingRAF = requestAnimationFrame(animateRings);
-            };
-            window._profitRingRAF = requestAnimationFrame(animateRings);
-        }
+        startProfitRingAnimation();
         
         // Исправляем позиционирование индикаторов для Telegram Mini App
         if (isTelegramApp && typeof fixBuildingIndicatorsForTelegram === 'function') {
@@ -990,11 +963,54 @@
         });
     }
     
+    function stopProfitRingAnimation() {
+        if (window._profitRingRAF) {
+            cancelAnimationFrame(window._profitRingRAF);
+            window._profitRingRAF = null;
+        }
+        window._profitRingAnimating = false;
+    }
+    
+    function startProfitRingAnimation() {
+        if (window._profitRingAnimating) return;
+        if (window._mapState && window._mapState.indicatorsSuppressed) return;
+        if (!window._profitRingState || Object.keys(window._profitRingState).length === 0) return;
+        
+        window._profitRingAnimating = true;
+        
+        const animateRings = () => {
+            if (!window._profitRingAnimating) return;
+            const state = window._profitRingState || {};
+            const now = performance.now();
+            Object.keys(state).forEach(key => {
+                const s = state[key];
+                if (!s || !s.el || !document.body.contains(s.el)) return;
+                const elapsed = (now - s.start) % s.duration;
+                const ratio = s.duration > 0 ? (elapsed / s.duration) : 0;
+                const deg = Math.max(0, Math.min(360, ratio * 360));
+                const c1 = '#D9523C';
+                const c2 = '#C875E6';
+                const c3 = '#D9523C';
+                const midDeg = Math.max(0, deg * 0.5);
+                s.progressEl.style.background = `conic-gradient(${c1} 0deg, ${c2} ${midDeg}deg, ${c3} ${deg}deg, transparent ${deg}deg)`;
+                
+                if (s.profitLabelEl) {
+                    const accumulatedProfit = calculateAccumulatedProfit(key);
+                    s.profitLabelEl.innerHTML = formatProfitLabel(accumulatedProfit);
+                }
+            });
+            window._profitRingRAF = requestAnimationFrame(animateRings);
+        };
+        
+        window._profitRingRAF = requestAnimationFrame(animateRings);
+    }
+    
     function hideProfitIndicators(options = {}) {
         const shouldSuppress = options && options.suppress === true;
         if (shouldSuppress) {
             if (!window._mapState) window._mapState = {};
             window._mapState.indicatorsSuppressed = true;
+            stopProfitRingAnimation();
         }
         const indicators = document.querySelectorAll('.profit-indicator');
         indicators.forEach(indicator => {
@@ -1018,10 +1034,12 @@
             indicator.style.transform = 'scale(1)';
             indicator.style.transition = 'all 0.3s ease';
         });
+        startProfitRingAnimation();
     }
     
     // Функция для принудительной очистки всех индикаторов сотрудников
     function clearAllProfitIndicators() {
+        stopProfitRingAnimation();
         const indicators = document.querySelectorAll('.profit-indicator');
         indicators.forEach(indicator => {
             if (indicator && indicator.parentNode) {
@@ -1350,7 +1368,7 @@
             .levelup-text-block {
                 position: absolute;
                 left: 50%;
-                top: 43%;
+                top: 36%;
                 transform: translate(-50%, -50%);
                 text-align: center;
                 color: #fff;
@@ -1369,12 +1387,12 @@
                 opacity: 0.9;
             }
             .levelup-text-block .levelup-top {
-                font-size: 24px;
-                letter-spacing: 0.2em;
+                font-size: 30px;
+                letter-spacing: 0.22em;
             }
             .levelup-text-block .levelup-bottom {
-                font-size: 15px;
-                letter-spacing: 0.28em;
+                font-size: 18px;
+                letter-spacing: 0.3em;
                 opacity: 0.85;
             }
         `;
