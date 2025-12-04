@@ -97,8 +97,10 @@
     const CAMERA_EASING = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
     const PANEL_CLOSE_DURATION = 300;
     const BUILDING_GLOW_DURATION = 2200;
+    const LEVEL_UP_DURATION = 2600;
     const BUILDING_GLOW_COLORS = ['#68ff99', '#35f0ff', '#c08bff', '#ff8f4d', '#ffe066'];
     const UPGRADE_GLOW_STYLE_ID = 'building-upgrade-glow-styles';
+    const LEVEL_UP_STYLE_ID = 'building-levelup-styles';
     
     // Переменные для анимации камеры
     let isAnimating = false;
@@ -1308,6 +1310,77 @@
         document.head.appendChild(style);
     }
     
+    function ensureLevelUpStyles() {
+        if (document.getElementById(LEVEL_UP_STYLE_ID)) {
+            return;
+        }
+        const style = document.createElement('style');
+        style.id = LEVEL_UP_STYLE_ID;
+        style.textContent = `
+            @keyframes levelTextReveal {
+                0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+                15% { transform: translate(-50%, -55%) scale(1.05); opacity: 1; }
+                55% { transform: translate(-50%, -60%) scale(1); opacity: 1; }
+                100% { transform: translate(-50%, -70%) scale(0.9); opacity: 0; }
+            }
+            @keyframes levelParticleFlight {
+                0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+                10% { opacity: 1; }
+                100% { opacity: 0; transform: translate(var(--travel-x), var(--travel-y)) scale(1.1); }
+            }
+            .levelup-effects-container {
+                position: fixed;
+                pointer-events: none;
+                width: 260px;
+                height: 260px;
+                z-index: 1800;
+                transform: translate(-50%, -50%);
+            }
+            .levelup-particle {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.05) 65%);
+                box-shadow: 0 0 22px rgba(255,255,255,0.9);
+                animation: levelParticleFlight 1s ease-out forwards;
+            }
+            .levelup-text-block {
+                position: absolute;
+                left: 50%;
+                top: 43%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                color: #fff;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                text-shadow: 0 4px 16px rgba(0,0,0,0.7);
+                animation: levelTextReveal 2s ease-out forwards;
+            }
+            .levelup-text-block .levelup-line {
+                width: 70%;
+                height: 1px;
+                background: rgba(255,255,255,0.85);
+                margin: 3px auto;
+                opacity: 0.9;
+            }
+            .levelup-text-block .levelup-top {
+                font-size: 24px;
+                letter-spacing: 0.2em;
+            }
+            .levelup-text-block .levelup-bottom {
+                font-size: 15px;
+                letter-spacing: 0.28em;
+                opacity: 0.85;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
     function createBuildingGlowOverlay(buildingType, color) {
         const element = getBuildingVisualElement(buildingType);
         if (!element) {
@@ -1335,6 +1408,56 @@
         return overlay;
     }
     
+    function createLevelUpEffect(buildingType, level) {
+        ensureLevelUpStyles();
+        const element = getBuildingVisualElement(buildingType);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        const container = document.createElement('div');
+        container.className = 'levelup-effects-container';
+        container.style.left = `${rect.left + rect.width / 2}px`;
+        container.style.top = `${rect.top + rect.height / 3}px`;
+        
+        const textBlock = document.createElement('div');
+        textBlock.className = 'levelup-text-block';
+        textBlock.innerHTML = `
+            <div class="levelup-top">Level ${level}</div>
+            <div class="levelup-line"></div>
+            <div class="levelup-bottom">Upgrade</div>
+        `;
+        container.appendChild(textBlock);
+        
+        const particleCount = 12;
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'levelup-particle';
+            const angle = (Math.PI * 2 / particleCount) * i;
+            const distance = 70 + Math.random() * 70;
+            const dx = Math.cos(angle) * distance;
+            const dy = Math.sin(angle) * distance - 20;
+            particle.style.setProperty('--travel-x', `${dx}px`);
+            particle.style.setProperty('--travel-y', `${dy}px`);
+            particle.style.animationDuration = `${0.9 + Math.random() * 0.6}s`;
+            particle.style.animationDelay = `${Math.random() * 0.2}s`;
+            container.appendChild(particle);
+        }
+        
+        document.body.appendChild(container);
+        
+        const cleanupTimeout = setTimeout(() => {
+            if (container.parentNode) {
+                container.parentNode.removeChild(container);
+            }
+        }, LEVEL_UP_DURATION);
+        
+        return () => {
+            clearTimeout(cleanupTimeout);
+            if (container.parentNode) {
+                container.parentNode.removeChild(container);
+            }
+        };
+    }
+    
     function playBuildingGlowAnimation(buildingType, level) {
         ensureUpgradeGlowStyles();
         const color = getBuildingGlowColor(level);
@@ -1357,6 +1480,11 @@
                     overlay.parentNode.removeChild(overlay);
                 }
             });
+        }
+        
+        const levelEffectCleanup = createLevelUpEffect(buildingType, level);
+        if (levelEffectCleanup) {
+            cleanups.push(levelEffectCleanup);
         }
         
         return new Promise((resolve) => {
