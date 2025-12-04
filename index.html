@@ -358,6 +358,10 @@
         #zone-storage{top:54%;left:38%;width:2.8%;height:2.5%;}
         #zone-library{bottom:42%;right:39%;width:3%;height:3.6667%;}
         
+        /* Dev кнопки */
+        #dev-buttons{position:fixed;top:10px;right:200px;z-index:1000;display:flex;gap:8px;}
+        #dev-buttons button{font-family:'Segoe UI',Arial,sans-serif;}
+        
         /* Адаптивность для мобильных устройств */
         @media (max-width: 768px) {
             .building-zone{
@@ -376,6 +380,8 @@
             /* Адаптация панелей для планшетов */
             #money-panel{padding:3px 8px;font-size:12px;gap:4px;}
             #credits-panel{padding:3px 8px;font-size:12px;gap:4px;}
+            #dev-buttons{right:180px;gap:6px;}
+            #dev-buttons button{padding:5px 10px;font-size:11px;}
             #bottom-nav{height:70px;padding:10px 12px 16px 12px;}
             #bottom-nav button{font-size:11px;gap:3px;}
             #bottom-nav button .icon{width:22px;height:22px;}
@@ -427,6 +433,8 @@
             /* Адаптация панелей для смартфонов */
             #money-panel{padding:2px 6px;font-size:11px;gap:3px;border-radius:6px;}
             #credits-panel{padding:2px 6px;font-size:11px;gap:3px;border-radius:6px;}
+            #dev-buttons{right:150px;top:8px;gap:4px;}
+            #dev-buttons button{padding:4px 8px;font-size:10px;}
             #bottom-nav{height:65px;padding:8px 12px 14px 12px;}
             #bottom-nav button{font-size:10px;gap:2px;}
             #bottom-nav button .icon{width:20px;height:20px;}
@@ -450,6 +458,8 @@
             /* Адаптация панелей для очень маленьких экранов */
             #money-panel{padding:1px 4px;font-size:10px;gap:2px;border-radius:4px;}
             #credits-panel{padding:1px 4px;font-size:10px;gap:2px;border-radius:4px;}
+            #dev-buttons{right:120px;top:6px;gap:3px;flex-direction:column;}
+            #dev-buttons button{padding:3px 6px;font-size:9px;}
             #bottom-nav{height:60px;padding:6px 12px 12px 12px;}
             #bottom-nav button{font-size:9px;gap:1px;}
             #bottom-nav button .icon{width:18px;height:18px;}
@@ -766,6 +776,12 @@
     <div id="credits-panel" class="panel balance-panel" style="top:10px;right:80px;position:absolute;">
         <i class="fa-solid fa-circle-xmark"></i><span id="credits-amount">0</span>
         <div id="credits-plus"><i class="fa-solid fa-plus" data-no-replace></i></div>
+    </div>
+
+    <!-- Dev кнопки -->
+    <div id="dev-buttons" style="position:fixed;top:10px;right:200px;z-index:1000;display:flex;gap:8px;">
+        <button id="btn-add-money" style="background:#4caf50;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.3)'">+200к</button>
+        <button id="btn-reset-data" style="background:#f44336;border:none;border-radius:8px;padding:6px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.3)'">Reset Data</button>
     </div>
 
     <!-- Панель новостей в правом верхнем углу -->

@@ -84,6 +84,9 @@
         window.addEventListener('resize', () => {
             setTimeout(updateProfitIndicators, 100);
         });
+        
+        // Кэшируем исходную позицию камеры (после инициализации карты)
+        setTimeout(cacheDefaultCameraState, 800);
     }
     // Делаем функцию глобальной для вызова из карты
     window.openBuildingPanel = openBuildingPanel;
@@ -91,10 +94,16 @@
     // Переменная для предотвращения двойного срабатывания
     let lastClickTime = 0;
     const CLICK_DELAY = 300; // миллисекунды
+    const CAMERA_EASING = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    const PANEL_CLOSE_DURATION = 300;
+    const BUILDING_GLOW_DURATION = 2200;
+    const BUILDING_GLOW_COLORS = ['#68ff99', '#35f0ff', '#c08bff', '#ff8f4d', '#ffe066'];
+    const UPGRADE_GLOW_STYLE_ID = 'building-upgrade-glow-styles';
     
     // Переменные для анимации камеры
     let isAnimating = false;
     let currentZoomTarget = null;
+    let defaultCameraState = null;
     
     // Глобальные переменные для печати
     let printStartTime = null;
@@ -979,7 +988,12 @@
         });
     }
     
-    function hideProfitIndicators() {
+    function hideProfitIndicators(options = {}) {
+        const shouldSuppress = options && options.suppress === true;
+        if (shouldSuppress) {
+            if (!window._mapState) window._mapState = {};
+            window._mapState.indicatorsSuppressed = true;
+        }
         const indicators = document.querySelectorAll('.profit-indicator');
         indicators.forEach(indicator => {
             indicator.style.opacity = '0';
@@ -988,9 +1002,13 @@
         });
     }
     
-    function showProfitIndicators() {
-        if (window._mapState && window._mapState.indicatorsSuppressed) {
+    function showProfitIndicators(options = {}) {
+        const force = options && options.force === true;
+        if (!force && window._mapState && window._mapState.indicatorsSuppressed) {
             return;
+        }
+        if (force && window._mapState) {
+            window._mapState.indicatorsSuppressed = false;
         }
         const indicators = document.querySelectorAll('.profit-indicator');
         indicators.forEach(indicator => {
@@ -1118,36 +1136,312 @@
         }
     }
     
-    function resetCamera() {
-        const mainMenuImage = document.getElementById('main-menu-image');
-        if (mainMenuImage) {
+    function cacheDefaultCameraState() {
+        if (defaultCameraState || !window.pureMap || typeof window.pureMap.getState !== 'function') {
+            return;
+        }
+        const state = window.pureMap.getState();
+        if (state) {
+            defaultCameraState = {
+                x: state.x,
+                y: state.y,
+                scale: state.scale
+            };
+        }
+    }
+    
+    function animateMapContentToState(targetState, duration = 600) {
+        if (!window.pureMap || typeof window.pureMap.getState !== 'function') {
+            return false;
+        }
+        const content = document.getElementById('pure-map-content');
+        if (!content) {
+            return false;
+        }
+        const state = window.pureMap.getState();
+        if (!state) {
+            return false;
+        }
+        state.x = targetState.x;
+        state.y = targetState.y;
+        state.scale = targetState.scale;
+        content.style.transition = `transform ${duration}ms ${CAMERA_EASING}`;
+        content.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) scale(${state.scale})`;
+        setTimeout(() => {
+            content.style.transition = '';
+        }, duration);
+        return true;
+    }
+    
+    function focusCameraOnBuilding(buildingType, options = {}) {
+        cacheDefaultCameraState();
+        const duration = options.duration || 900;
+        
+        return new Promise((resolve) => {
+            if (window.pureMap && typeof window.pureMap.focusTo === 'function') {
+                try {
+                    const content = document.getElementById('pure-map-content');
+                    if (content) {
+                        content.style.transition = `transform ${duration}ms ${CAMERA_EASING}`;
+                    }
+                    window.pureMap.focusTo(buildingType);
+                    setTimeout(() => {
+                        if (content) {
+                            content.style.transition = '';
+                        }
+                        resolve();
+                    }, duration);
+                    return;
+                } catch (error) {
+                    console.error('❌ Ошибка при фокусе карты:', error);
+                }
+            }
+            
+            const mainMenuImage = document.getElementById('main-menu-image');
+            const buildingZone = document.querySelector(`[data-building="${buildingType}"]`);
+            if (!mainMenuImage || !buildingZone) {
+                resolve();
+                return;
+            }
+            
             try {
-                mainMenuImage.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                mainMenuImage.style.transform = 'scale(1) translate(0%, 0%)';
+                const rect = buildingZone.getBoundingClientRect();
+                const imageRect = mainMenuImage.getBoundingClientRect();
+                const centerX = (rect.left + rect.width / 2 - imageRect.left) / imageRect.width;
+                const centerY = (rect.top + rect.height / 2 - imageRect.top) / imageRect.height;
+                const scale = 1.2;
+                const rawTX = (0.5 - centerX) * 50;
+                const rawTY = (0.5 - centerY) * 50;
+                const safeShift = 50 * (scale - 1) / scale;
+                const maxShift = safeShift - 0.7;
+                const clamp = (v, a) => (v < -a ? -a : (v > a ? a : v));
+                const isEdgeSensitive = (buildingType === 'factory' || buildingType === 'print');
+                const tx = isEdgeSensitive ? clamp(rawTX, maxShift) : clamp(rawTX, safeShift);
+                const ty = isEdgeSensitive ? clamp(rawTY, maxShift) : clamp(rawTY, safeShift);
+                mainMenuImage.style.transition = `transform ${duration}ms ${CAMERA_EASING}`;
+                mainMenuImage.style.transform = `scale(${scale}) translate(${tx}%, ${ty}%)`;
                 
                 setTimeout(() => {
                     mainMenuImage.style.transition = '';
-                    currentZoomTarget = null;
-                    
-                    // Показываем индикаторы сотрудников только после полного завершения анимации отдаления
-                    setTimeout(() => {
-                        updateProfitIndicators();
-                    }, 100);
-                }, 600);
+                    resolve();
+                }, duration);
             } catch (error) {
-                console.error('❌ Ошибка при сбросе камеры:', error);
+                console.error('❌ Ошибка при анимации камеры:', error);
+                resolve();
+            }
+        });
+    }
+    
+    function getBuildingVisualElement(buildingType) {
+        const pureMapElement = document.querySelector(`#pure-map-buildings img[alt="${buildingType}"]`);
+        if (pureMapElement) {
+            return pureMapElement;
+        }
+        return document.querySelector(`.building-zone[data-building="${buildingType}"]`);
+    }
+    
+    function getBuildingGlowColor(level = 1) {
+        const index = Math.min(Math.max(level - 1, 0), BUILDING_GLOW_COLORS.length - 1);
+        return BUILDING_GLOW_COLORS[index];
+    }
+    
+    function ensureUpgradeGlowStyles() {
+        if (document.getElementById(UPGRADE_GLOW_STYLE_ID)) {
+            return;
+        }
+        const style = document.createElement('style');
+        style.id = UPGRADE_GLOW_STYLE_ID;
+        style.textContent = `
+            @keyframes buildingGlowPulse {
+                0% { filter: drop-shadow(0 0 20px var(--building-glow-color, #ffd54f)) drop-shadow(0 0 30px rgba(255,255,255,0.9)); opacity: 1; }
+                50% { filter: drop-shadow(0 0 70px var(--building-glow-color, #ffd54f)) drop-shadow(0 0 110px rgba(255,255,255,0.8)); opacity: 1; }
+                100% { filter: drop-shadow(0 0 25px var(--building-glow-color, #ffd54f)) drop-shadow(0 0 40px rgba(255,255,255,0.9)); opacity: 1; }
+            }
+            @keyframes buildingGlowBorder {
+                0% { box-shadow: 0 0 25px rgba(255,255,255,0.55), 0 0 55px var(--building-glow-color, #ffd54f); opacity: 0.95; }
+                50% { box-shadow: 0 0 70px rgba(255,255,255,0.9), 0 0 120px var(--building-glow-color, #ffd54f); opacity: 1; }
+                100% { box-shadow: 0 0 35px rgba(255,255,255,0.6), 0 0 70px var(--building-glow-color, #ffd54f); opacity: 0.95; }
+            }
+            @keyframes buildingSparkleTravel {
+                0% { transform: translate(0%, 0%) scale(0.8); opacity: 0; }
+                10% { opacity: 1; }
+                25% { transform: translate(80%, -5%) scale(1); opacity: 0.9; }
+                50% { transform: translate(95%, 90%) scale(1.1); opacity: 1; }
+                75% { transform: translate(-5%, 95%) scale(1); opacity: 0.8; }
+                100% { transform: translate(0%, 0%) scale(0.7); opacity: 0; }
+            }
+            .building-upgrade-glow {
+                animation: buildingGlowPulse 1.2s ease-in-out infinite;
+            }
+            .building-glow-overlay {
+                position: fixed;
+                pointer-events: none;
+                border-radius: 24px;
+                mix-blend-mode: screen;
+                filter: saturate(1.5);
+                background: radial-gradient(circle at center, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 55%, transparent 85%);
+                animation: buildingGlowBorder 1.4s ease-in-out infinite;
+            }
+            .building-glow-overlay::before,
+            .building-glow-overlay::after {
+                content: '';
+                position: absolute;
+                inset: -6px;
+                border-radius: inherit;
+                border: 2px dashed rgba(255,255,255,0.5);
+                box-shadow: 0 0 45px rgba(255,255,255,0.4), 0 0 65px rgba(255,255,255,0.25);
+                animation: buildingGlowBorder 1.4s linear infinite;
+            }
+            .building-glow-overlay::after {
+                animation-delay: 0.7s;
+            }
+            .building-glow-sparkle {
+                position: absolute;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.05) 65%);
+                box-shadow: 0 0 25px rgba(255,255,255,0.95);
+                animation: buildingSparkleTravel 2s linear infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    function createBuildingGlowOverlay(buildingType, color) {
+        const element = getBuildingVisualElement(buildingType);
+        if (!element) {
+            return null;
+        }
+        const rect = element.getBoundingClientRect();
+        const overlay = document.createElement('div');
+        overlay.className = 'building-glow-overlay';
+        overlay.style.left = `${rect.left}px`;
+        overlay.style.top = `${rect.top}px`;
+        overlay.style.width = `${rect.width}px`;
+        overlay.style.height = `${rect.height}px`;
+        overlay.style.setProperty('--building-glow-color', color);
+        overlay.style.border = `3px solid ${color}`;
+        overlay.style.boxShadow = `0 0 80px ${color}, 0 0 140px rgba(255,255,255,0.9), inset 0 0 45px ${color}`;
+        
+        for (let i = 0; i < 3; i++) {
+            const sparkle = document.createElement('span');
+            sparkle.className = 'building-glow-sparkle';
+            sparkle.style.animationDelay = `${i * 0.35}s`;
+            overlay.appendChild(sparkle);
+        }
+        
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+    
+    function playBuildingGlowAnimation(buildingType, level) {
+        ensureUpgradeGlowStyles();
+        const color = getBuildingGlowColor(level);
+        const targetElement = getBuildingVisualElement(buildingType);
+        const cleanups = [];
+        
+        if (targetElement) {
+            targetElement.style.setProperty('--building-glow-color', color);
+            targetElement.classList.add('building-upgrade-glow');
+            cleanups.push(() => {
+                targetElement.classList.remove('building-upgrade-glow');
+                targetElement.style.removeProperty('--building-glow-color');
+            });
+        }
+        
+        const overlay = createBuildingGlowOverlay(buildingType, color);
+        if (overlay) {
+            cleanups.push(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            });
+        }
+        
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                cleanups.forEach(fn => {
+                    try { fn(); } catch (_) {}
+                });
+                resolve();
+            }, BUILDING_GLOW_DURATION);
+        });
+    }
+    
+    function resetCamera() {
+        cacheDefaultCameraState();
+        return new Promise((resolve) => {
+            if (defaultCameraState && animateMapContentToState(defaultCameraState, 600)) {
                 currentZoomTarget = null;
                 setTimeout(() => {
                     updateProfitIndicators();
+                    resolve();
+                }, 700);
+                return;
+            }
+            
+            const mainMenuImage = document.getElementById('main-menu-image');
+            if (mainMenuImage) {
+                try {
+                    mainMenuImage.style.transition = `transform 0.6s ${CAMERA_EASING}`;
+                    mainMenuImage.style.transform = 'scale(1) translate(0%, 0%)';
+                    
+                    setTimeout(() => {
+                        mainMenuImage.style.transition = '';
+                        currentZoomTarget = null;
+                        setTimeout(() => {
+                            updateProfitIndicators();
+                            resolve();
+                        }, 100);
+                    }, 600);
+                } catch (error) {
+                    console.error('❌ Ошибка при сбросе камеры:', error);
+                    currentZoomTarget = null;
+                    setTimeout(() => {
+                        updateProfitIndicators();
+                        resolve();
+                    }, 100);
+                }
+            } else {
+                currentZoomTarget = null;
+                setTimeout(() => {
+                    updateProfitIndicators();
+                    resolve();
                 }, 100);
             }
-        } else {
-            // Если нет изображения, просто сбрасываем состояние
-            currentZoomTarget = null;
-            setTimeout(() => {
-                updateProfitIndicators();
-            }, 100);
+        });
+    }
+    
+    function celebrateBuildingUpgrade(buildingType) {
+        const building = buildingsData[buildingType];
+        if (!building) {
+            return;
         }
+        
+        try {
+            hideProfitIndicators({ suppress: true });
+        } catch (_) {}
+        
+        const closeDelay = closeBuildingPanel({ skipCameraReset: true }) || 0;
+        const celebrationDelay = closeDelay + 80;
+        
+        setTimeout(() => {
+            focusCameraOnBuilding(buildingType)
+                .catch(() => {})
+                .then(() => playBuildingGlowAnimation(buildingType, building.level))
+                .catch(() => {})
+                .then(() => resetCamera())
+                .then(() => {
+                    setTimeout(() => {
+                        try {
+                            showProfitIndicators({ force: true });
+                            updateProfitIndicatorsPositions();
+                            setTimeout(updateProfitIndicatorsPositions, 150);
+                        } catch (_) {}
+                    }, 60);
+                });
+        }, celebrationDelay);
     }
     // === ФУНКЦИИ ПАНЕЛЕЙ ЗДАНИЙ ===
     function openBuildingPanel(building, buildingName) {
@@ -2809,18 +3103,37 @@
         }, 4000);
     }
     
-    function closeBuildingPanel() {
-        const panel = document.getElementById('building-panel');
-        if (panel) {
-            panel.classList.remove('show');
-            setTimeout(() => {
-                if (panel.parentNode) {
-                    panel.parentNode.removeChild(panel);
-                }
-                // Запускаем анимацию возврата камеры после закрытия панели
-                resetCamera();
-            }, 300);
+    function closeBuildingPanel(eventOrOptions, maybeOptions) {
+        let options = {};
+        if (eventOrOptions && typeof eventOrOptions.preventDefault === 'function') {
+            eventOrOptions.preventDefault();
+            if (typeof eventOrOptions.stopPropagation === 'function') {
+                eventOrOptions.stopPropagation();
+            }
+            options = maybeOptions || {};
+        } else if (eventOrOptions && typeof eventOrOptions === 'object') {
+            options = eventOrOptions;
         }
+        
+        const panel = document.getElementById('building-panel');
+        if (!panel) {
+            return 0;
+        }
+        
+        panel.classList.remove('show');
+        setTimeout(() => {
+            if (panel.parentNode) {
+                panel.parentNode.removeChild(panel);
+            }
+            setTimeout(() => {
+                try {
+                    updateProfitIndicators();
+                    showProfitIndicators();
+                } catch (_) {}
+            }, 50);
+        }, PANEL_CLOSE_DURATION);
+        
+        return PANEL_CLOSE_DURATION;
     }
     
     // === ФУНКЦИИ НАВЕДЕНИЯ УДАЛЕНЫ ===
@@ -3914,6 +4227,8 @@
                 if (window.showNotification) {
                     window.showNotification(`🏗️ Библиотека улучшена до уровня ${building.level}!`, 'success');
                 }
+                
+                celebrateBuildingUpgrade('library');
             } else if (building.level >= 5) {
                 if (window.showNotification) {
                     window.showNotification('❌ Библиотека уже максимального уровня!', 'error');
@@ -3970,6 +4285,8 @@
                 if (window.showNotification) {
                     window.showNotification(`🏭 Завод улучшен до уровня ${building.level}!`, 'success');
                 }
+                
+                celebrateBuildingUpgrade('factory');
             } else if (building.level >= 5) {
                 if (window.showNotification) {
                     window.showNotification('❌ Завод уже максимального уровня!', 'error');
@@ -4125,6 +4442,8 @@
                 if (window.showNotification) {
                     window.showNotification(`🖨️ Типография улучшена до уровня ${building.level}!`, 'success');
                 }
+                
+                celebrateBuildingUpgrade('print');
             } else if (building.level >= 5) {
                 if (window.showNotification) {
                     window.showNotification('❌ Типография уже максимального уровня!', 'error');
@@ -4796,6 +5115,8 @@
                 if (window.showNotification) {
                     window.showNotification(`📮 Почта улучшена до уровня ${building.level}!`, 'success');
                 }
+                
+                celebrateBuildingUpgrade('storage');
             } else if (building.level >= 5) {
                 if (window.showNotification) {
                     window.showNotification('❌ Почта уже максимального уровня!', 'error');
@@ -5417,4 +5738,139 @@
     // Делаем функции глобальными
     window.showDeliveryProgressPanel = showDeliveryProgressPanel;
     window.closeDeliveryPanel = closeDeliveryPanel;
+    
+    // === DEV КНОПКИ ===
+    // Инициализация dev кнопок
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnAddMoney = document.getElementById('btn-add-money');
+        const btnResetData = document.getElementById('btn-reset-data');
+        
+        if (btnAddMoney) {
+            btnAddMoney.addEventListener('click', function() {
+                const currentMoney = getPlayerMoney();
+                const newAmount = currentMoney + 200000;
+                setPlayerMoney(newAmount);
+                
+                // Обновляем отображение
+                const moneyElement = document.getElementById('money-amount');
+                if (moneyElement) {
+                    moneyElement.textContent = newAmount.toLocaleString();
+                }
+                
+                // Показываем уведомление
+                if (window.showNotification) {
+                    window.showNotification('💰 Добавлено 200,000 монет!', 'success');
+                }
+            });
+        }
+        
+        if (btnResetData) {
+            btnResetData.addEventListener('click', function() {
+                if (confirm('⚠️ Вы уверены, что хотите сбросить все данные? Это действие нельзя отменить!')) {
+                    // Очищаем все данные из localStorage
+                    localStorage.removeItem('balance');
+                    localStorage.removeItem('buildingsData');
+                    localStorage.removeItem('hiredEmployees');
+                    localStorage.removeItem('libraryFirstVisit');
+                    localStorage.removeItem('tasksFirstVisit');
+                    localStorage.removeItem('printState');
+                    localStorage.removeItem('delivery_queue');
+                    
+                    // Сбрасываем переменные в памяти
+                    buildingsData = {
+                        'print': { 
+                            level: 1, 
+                            income: 5000, 
+                            workers: 0, 
+                            maxWorkers: 3, 
+                            upgradeCost: 10000, 
+                            lastCollectTime: null, 
+                            accumulatedProfit: 0,
+                            isOwned: false,
+                            purchaseCost: 25000,
+                            name: 'Типография'
+                        },
+                        'factory': { 
+                            level: 1, 
+                            income: 3000, 
+                            workers: 0, 
+                            maxWorkers: 5, 
+                            upgradeCost: 5000, 
+                            lastCollectTime: null, 
+                            accumulatedProfit: 0,
+                            isOwned: false,
+                            purchaseCost: 20000,
+                            name: 'Завод'
+                        },
+                        'storage': { 
+                            level: 1, 
+                            income: 3000, 
+                            workers: 0, 
+                            maxWorkers: 2, 
+                            upgradeCost: 8000, 
+                            lastCollectTime: null, 
+                            accumulatedProfit: 0,
+                            isOwned: false,
+                            purchaseCost: 15000,
+                            name: 'Почта'
+                        },
+                        'library': { 
+                            level: 1, 
+                            income: 2000, 
+                            workers: 0, 
+                            maxWorkers: 4, 
+                            upgradeCost: 5000, 
+                            lastCollectTime: Date.now(), 
+                            accumulatedProfit: 0,
+                            isOwned: true,
+                            purchaseCost: 0,
+                            name: 'Библиотека'
+                        }
+                    };
+                    hiredEmployees = {};
+                    libraryFirstVisit = false;
+                    tasksFirstVisit = false;
+                    
+                    // Устанавливаем начальный баланс
+                    setPlayerMoney(100000);
+                    
+                    // Обновляем отображение
+                    const moneyElement = document.getElementById('money-amount');
+                    if (moneyElement) {
+                        moneyElement.textContent = '100000';
+                    }
+                    
+                    // Обновляем индикаторы
+                    updateProfitIndicators();
+                    
+                    // Обновляем панель города, если она открыта
+                    if (window.renderCity) {
+                        window.renderCity();
+                    }
+                    
+                    // Обновляем карту
+                    if (window.pureMap && typeof window.pureMap.showBuilding === 'function') {
+                        window.pureMap.showBuilding('library');
+                        // Скрываем остальные здания
+                        ['factory', 'storage', 'print'].forEach(key => {
+                            const buildingNode = document.querySelector(`#pure-map-buildings img[alt="${key}"]`);
+                            if (buildingNode) {
+                                buildingNode.style.display = 'none';
+                            }
+                        });
+                    }
+                    
+                    // Показываем уведомление
+                    if (window.showNotification) {
+                        window.showNotification('🔄 Все данные сброшены!', 'success');
+                    }
+                    
+                    // Перезагружаем страницу через небольшую задержку
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }
+            });
+        }
+    });
 })();
