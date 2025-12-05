@@ -1835,18 +1835,22 @@
         await waitFor(revealDelay);
         await revealBuildingWithParticles(buildingType);
         
-        if (!skipCamera) {
-            await waitFor(140);
-            try {
-                await resetCamera();
-            } catch (_) {}
-        }
-        
         try {
             showProfitIndicators({ force: true });
             updateProfitIndicatorsPositions();
             setTimeout(updateProfitIndicatorsPositions, 160);
         } catch (_) {}
+        
+        if (!skipCamera) {
+            try {
+                await resetCamera();
+            } catch (_) {}
+            setTimeout(() => {
+                try {
+                    updateProfitIndicatorsPositions();
+                } catch (_) {}
+            }, 140);
+        }
     }
     
     function playBuildingPurchaseSequence(buildingType, options = {}) {
