@@ -101,11 +101,18 @@
     const BUILDING_GLOW_COLORS = ['#68ff99', '#35f0ff', '#c08bff', '#ff8f4d', '#ffe066'];
     const UPGRADE_GLOW_STYLE_ID = 'building-upgrade-glow-styles';
     const LEVEL_UP_STYLE_ID = 'building-levelup-styles';
+    const BUILDING_PURCHASE_STYLE_ID = 'building-purchase-animation-styles';
+    const BUILDING_PURCHASE_PARTICLE_DURATION = 1200;
+    const BUILDING_PURCHASE_REVEAL_DELAY = 420;
+    
+    const waitFor = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
     
     // Переменные для анимации камеры
     let isAnimating = false;
     let currentZoomTarget = null;
     let defaultCameraState = null;
+    let buildingPurchaseAnimationChain = Promise.resolve();
+    const buildingPurchaseContourCache = {};
     
     // Глобальные переменные для печати
     let printStartTime = null;
@@ -676,6 +683,7 @@
     
     // Функция создания и обновления индикаторов сотрудников
     function updateProfitIndicators() {
+        stopProfitRingAnimation();
         // Если индикаторы подавлены (после свайпа) — ничего не делаем
         if (window._mapState && window._mapState.indicatorsSuppressed) {
             return;
@@ -716,7 +724,6 @@
                 indicator.remove();
             }
         });
-        stopProfitRingAnimation();
         // Сброс состояния анимации кругов, если ранее существовало
         if (!window._profitRingState) { window._profitRingState = {}; }
         window._profitRingState = {};
@@ -968,23 +975,21 @@
             cancelAnimationFrame(window._profitRingRAF);
             window._profitRingRAF = null;
         }
-        window._profitRingAnimating = false;
     }
     
     function startProfitRingAnimation() {
-        if (window._profitRingAnimating) return;
+        if (window._profitRingRAF) return;
         if (window._mapState && window._mapState.indicatorsSuppressed) return;
         if (!window._profitRingState || Object.keys(window._profitRingState).length === 0) return;
         
-        window._profitRingAnimating = true;
-        
         const animateRings = () => {
-            if (!window._profitRingAnimating) return;
             const state = window._profitRingState || {};
             const now = performance.now();
+            let hasActive = false;
             Object.keys(state).forEach(key => {
                 const s = state[key];
                 if (!s || !s.el || !document.body.contains(s.el)) return;
+                hasActive = true;
                 const elapsed = (now - s.start) % s.duration;
                 const ratio = s.duration > 0 ? (elapsed / s.duration) : 0;
                 const deg = Math.max(0, Math.min(360, ratio * 360));
@@ -999,6 +1004,12 @@
                     s.profitLabelEl.innerHTML = formatProfitLabel(accumulatedProfit);
                 }
             });
+            
+            if (!hasActive) {
+                stopProfitRingAnimation();
+                return;
+            }
+            
             window._profitRingRAF = requestAnimationFrame(animateRings);
         };
         
@@ -1027,6 +1038,7 @@
         }
         if (force && window._mapState) {
             window._mapState.indicatorsSuppressed = false;
+            startProfitRingAnimation();
         }
         const indicators = document.querySelectorAll('.profit-indicator');
         indicators.forEach(indicator => {
@@ -1039,7 +1051,6 @@
     
     // Функция для принудительной очистки всех индикаторов сотрудников
     function clearAllProfitIndicators() {
-        stopProfitRingAnimation();
         const indicators = document.querySelectorAll('.profit-indicator');
         indicators.forEach(indicator => {
             if (indicator && indicator.parentNode) {
@@ -1368,7 +1379,7 @@
             .levelup-text-block {
                 position: absolute;
                 left: 50%;
-                top: 36%;
+                top: 38%;
                 transform: translate(-50%, -50%);
                 text-align: center;
                 color: #fff;
@@ -1514,6 +1525,356 @@
             }, BUILDING_GLOW_DURATION);
         });
     }
+    
+    function ensurePurchaseAnimationStyles() {
+        if (document.getElementById(BUILDING_PURCHASE_STYLE_ID)) {
+            return;
+        }
+        const style = document.createElement('style');
+        style.id = BUILDING_PURCHASE_STYLE_ID;
+        style.textContent = `
+            @keyframes pureMapShardFlight {
+                0% { opacity: 0; transform: translate3d(0,0,0) rotate(var(--particle-rotation, 0deg)) scaleX(0.35); }
+                18% { opacity: 1; }
+                100% { opacity: 0; transform: translate3d(var(--travel-x, 0px), var(--travel-y, 0px), 0) rotate(var(--particle-rotation, 0deg)) scaleX(1); }
+            }
+            .building-purchase-particles {
+                position: fixed;
+                pointer-events: none;
+                z-index: 2200;
+                overflow: visible;
+                mix-blend-mode: screen;
+            }
+            .building-purchase-particles.pure-map {
+                position: absolute;
+                z-index: 3;
+            }
+            .building-purchase-particle {
+                position: absolute;
+                border-radius: 999px;
+                background: linear-gradient(90deg, rgba(255,223,140,0.95) 0%, rgba(255,143,68,0.4) 55%, rgba(255,143,68,0));
+                box-shadow: 0 0 26px rgba(255,200,120,0.75);
+                transform-origin: left center;
+                animation: pureMapShardFlight 0.95s ease-out forwards;
+                opacity: 0;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    function getBuildingContourData(buildingType, element) {
+        if (!buildingType || !element || element.tagName !== 'IMG') {
+            return null;
+        }
+        
+        const cached = buildingPurchaseContourCache[buildingType];
+        if (cached && cached.src === (element.currentSrc || element.src)) {
+            return cached;
+        }
+        
+        if (!element.complete || !element.naturalWidth || !element.naturalHeight) {
+            return null;
+        }
+        
+        try {
+            const canvas = document.createElement('canvas');
+            const width = element.naturalWidth;
+            const height = element.naturalHeight;
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) {
+                return null;
+            }
+            ctx.drawImage(element, 0, 0, width, height);
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            const points = [];
+            const step = Math.max(2, Math.floor(Math.min(width, height) / 120));
+            const alphaThreshold = 35;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            for (let y = step; y < height - step; y += step) {
+                for (let x = step; x < width - step; x += step) {
+                    const alpha = data[(y * width + x) * 4 + 3];
+                    if (alpha < alphaThreshold) continue;
+                    
+                    let isEdge = false;
+                    const neighbors = [
+                        [step, 0], [-step, 0], [0, step], [0, -step]
+                    ];
+                    for (const [dx, dy] of neighbors) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height) {
+                            isEdge = true;
+                            break;
+                        }
+                        const neighborAlpha = data[(ny * width + nx) * 4 + 3];
+                        if (neighborAlpha < alphaThreshold / 2) {
+                            isEdge = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!isEdge) continue;
+                    
+                    let normalX = x - centerX;
+                    let normalY = y - centerY;
+                    const len = Math.hypot(normalX, normalY) || 1;
+                    normalX /= len;
+                    normalY /= len;
+                    points.push({ x, y, nx: normalX, ny: normalY });
+                }
+            }
+            
+            if (!points.length) {
+                return null;
+            }
+            
+            const contourData = {
+                points,
+                width,
+                height,
+                src: element.currentSrc || element.src
+            };
+            buildingPurchaseContourCache[buildingType] = contourData;
+            return contourData;
+        } catch (error) {
+            console.warn('Failed to build building contour', error);
+            return null;
+        }
+    }
+    
+    function createBuildingPurchaseParticles(buildingType, targetElement) {
+        ensurePurchaseAnimationStyles();
+        if (!targetElement) return null;
+        
+        const margin = 28;
+        const pureMapRoot = targetElement.closest ? targetElement.closest('#pure-map-buildings') : null;
+        const rect = targetElement.getBoundingClientRect();
+        const baseWidth = pureMapRoot ? (targetElement.offsetWidth || rect.width) : rect.width;
+        const baseHeight = pureMapRoot ? (targetElement.offsetHeight || rect.height) : rect.height;
+        const contourData = pureMapRoot ? getBuildingContourData(buildingType, targetElement) : null;
+        const hasContour = !!(contourData && contourData.points && contourData.points.length);
+        
+        const container = document.createElement('div');
+        container.className = 'building-purchase-particles';
+        if (pureMapRoot) {
+            container.classList.add('pure-map');
+            container.style.left = `${targetElement.offsetLeft - margin}px`;
+            container.style.top = `${targetElement.offsetTop - margin}px`;
+            container.style.width = `${baseWidth + margin * 2}px`;
+            container.style.height = `${baseHeight + margin * 2}px`;
+            pureMapRoot.appendChild(container);
+        } else {
+            container.style.left = `${rect.left - margin}px`;
+            container.style.top = `${rect.top - margin}px`;
+            container.style.width = `${rect.width + margin * 2}px`;
+            container.style.height = `${rect.height + margin * 2}px`;
+            document.body.appendChild(container);
+        }
+        
+        const edges = ['top', 'right', 'bottom', 'left'];
+        const particleCount = Math.max(18, Math.round((baseWidth + baseHeight) / 28));
+        const insetX = margin;
+        const insetY = margin;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('span');
+            particle.className = 'building-purchase-particle';
+            const length = 34 + Math.random() * 32;
+            const thickness = 2 + Math.random() * 3;
+            particle.style.width = `${length}px`;
+            particle.style.height = `${thickness}px`;
+            const travel = 70 + Math.random() * 70;
+            const hueShift = Math.random() * 0.25;
+            particle.style.filter = `hue-rotate(${hueShift * 40}deg)`;
+            
+            if (hasContour) {
+                const contour = contourData.points[Math.floor(Math.random() * contourData.points.length)];
+                const scaleX = baseWidth / contourData.width;
+                const scaleY = baseHeight / contourData.height;
+                const px = insetX + contour.x * scaleX;
+                const py = insetY + contour.y * scaleY;
+                particle.style.left = `${px}px`;
+                particle.style.top = `${py}px`;
+                const jitter = (Math.random() - 0.5) * 24;
+                particle.style.setProperty('--travel-x', `${contour.nx * travel + jitter}px`);
+                particle.style.setProperty('--travel-y', `${contour.ny * travel + jitter}px`);
+                const rotation = Math.atan2(contour.ny, contour.nx) * (180 / Math.PI);
+                particle.style.setProperty('--particle-rotation', `${rotation}deg`);
+            } else {
+                const edge = edges[Math.floor(Math.random() * edges.length)];
+                const alongEdge = Math.random();
+                const jitter = (Math.random() - 0.5) * 40;
+                switch (edge) {
+                    case 'top': {
+                        const rotation = -10 + Math.random() * 20;
+                        particle.style.left = `${insetX + alongEdge * baseWidth}px`;
+                        particle.style.top = `${insetY - thickness}px`;
+                        particle.style.setProperty('--travel-x', `${jitter}px`);
+                        particle.style.setProperty('--travel-y', `${-travel}px`);
+                        particle.style.setProperty('--particle-rotation', `${rotation}deg`);
+                        break;
+                    }
+                    case 'bottom': {
+                        const rotation = 190 + Math.random() * 20;
+                        particle.style.left = `${insetX + alongEdge * baseWidth}px`;
+                        particle.style.top = `${insetY + baseHeight}px`;
+                        particle.style.setProperty('--travel-x', `${jitter}px`);
+                        particle.style.setProperty('--travel-y', `${travel}px`);
+                        particle.style.setProperty('--particle-rotation', `${rotation}deg`);
+                        break;
+                    }
+                    case 'left': {
+                        const rotation = -90 + Math.random() * 20;
+                        particle.style.left = `${insetX - length}px`;
+                        particle.style.top = `${insetY + alongEdge * baseHeight}px`;
+                        particle.style.setProperty('--travel-x', `${-travel}px`);
+                        particle.style.setProperty('--travel-y', `${jitter}px`);
+                        particle.style.setProperty('--particle-rotation', `${rotation}deg`);
+                        break;
+                    }
+                    case 'right':
+                    default: {
+                        const rotation = 90 + Math.random() * 20;
+                        particle.style.left = `${insetX + baseWidth}px`;
+                        particle.style.top = `${insetY + alongEdge * baseHeight}px`;
+                        particle.style.setProperty('--travel-x', `${travel}px`);
+                        particle.style.setProperty('--travel-y', `${jitter}px`);
+                        particle.style.setProperty('--particle-rotation', `${rotation}deg`);
+                        break;
+                    }
+                }
+            }
+            
+            particle.style.animationDuration = `${0.9 + Math.random() * 0.4}s`;
+            particle.style.animationDelay = `${Math.random() * 0.18}s`;
+            container.appendChild(particle);
+        }
+        
+        setTimeout(() => {
+            if (container.parentNode) {
+                container.parentNode.removeChild(container);
+            }
+        }, BUILDING_PURCHASE_PARTICLE_DURATION);
+        
+        return container;
+    }
+    
+    function revealBuildingWithParticles(buildingType) {
+        ensurePurchaseAnimationStyles();
+        
+        return new Promise((resolve) => {
+            const targetElement = getBuildingVisualElement(buildingType);
+            
+            if (window.pureMap && typeof window.pureMap.showBuilding === 'function') {
+                window.pureMap.showBuilding(buildingType);
+            } else if (targetElement) {
+                targetElement.style.display = '';
+            }
+            
+            if (!targetElement) {
+                resolve();
+                return;
+            }
+            
+            const originalStyles = {
+                transition: targetElement.style.transition || '',
+                transform: targetElement.style.transform || '',
+                opacity: targetElement.style.opacity || '',
+                willChange: targetElement.style.willChange || ''
+            };
+            
+            targetElement.style.transition = 'none';
+            targetElement.style.opacity = '0';
+            targetElement.style.transformOrigin = 'center center';
+            targetElement.style.transform = 'scale(0.85)';
+            targetElement.style.willChange = 'transform, opacity';
+            
+            requestAnimationFrame(() => {
+                targetElement.style.transition = 'transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+                targetElement.style.opacity = '1';
+                targetElement.style.transform = 'scale(1)';
+            });
+            
+            createBuildingPurchaseParticles(buildingType, targetElement);
+            
+            setTimeout(() => {
+                targetElement.style.transition = originalStyles.transition;
+                targetElement.style.transform = originalStyles.transform;
+                targetElement.style.opacity = originalStyles.opacity;
+                targetElement.style.willChange = originalStyles.willChange;
+                resolve();
+            }, BUILDING_PURCHASE_PARTICLE_DURATION);
+        });
+    }
+    
+    async function executeBuildingPurchaseSequence(buildingType, options = {}) {
+        if (!buildingType) {
+            return;
+        }
+        
+        const skipCamera = options.skipCamera === true;
+        try {
+            hideProfitIndicators({ suppress: true });
+        } catch (_) {}
+        
+        const closeDelay = closeBuildingPanel({ skipCameraReset: true }) || 0;
+        await waitFor((closeDelay || 0) + 60);
+        
+        if (!skipCamera) {
+            try {
+                await focusCameraOnBuilding(buildingType, { duration: options.zoomDuration || 950 });
+            } catch (_) {}
+        }
+        
+        const revealDelay = typeof options.revealDelay === 'number' ? options.revealDelay : BUILDING_PURCHASE_REVEAL_DELAY;
+        await waitFor(revealDelay);
+        await revealBuildingWithParticles(buildingType);
+        
+        if (!skipCamera) {
+            await waitFor(140);
+            try {
+                await resetCamera();
+            } catch (_) {}
+        }
+        
+        try {
+            showProfitIndicators({ force: true });
+            updateProfitIndicatorsPositions();
+            setTimeout(updateProfitIndicatorsPositions, 160);
+        } catch (_) {}
+    }
+    
+    function playBuildingPurchaseSequence(buildingType, options = {}) {
+        if (!buildingType) {
+            return Promise.resolve();
+        }
+        
+        if (options && options.instant === true) {
+            if (window.pureMap && typeof window.pureMap.showBuilding === 'function') {
+                window.pureMap.showBuilding(buildingType);
+            } else {
+                const fallbackElement = getBuildingVisualElement(buildingType);
+                if (fallbackElement) {
+                    fallbackElement.style.display = '';
+                }
+            }
+            return Promise.resolve();
+        }
+        
+        buildingPurchaseAnimationChain = buildingPurchaseAnimationChain
+            .catch(() => {})
+            .then(() => executeBuildingPurchaseSequence(buildingType, options));
+        
+        return buildingPurchaseAnimationChain;
+    }
+    
+    window.updateBuildingDisplay = playBuildingPurchaseSequence;
+    window.playBuildingPurchaseSequence = playBuildingPurchaseSequence;
     
     function resetCamera() {
         cacheDefaultCameraState();
@@ -4479,12 +4840,11 @@
                     window.showNotification('🏭 Завод куплен!', 'success');
                 }
                 
-                // Закрываем панель
-                closeBuildingPanel();
-                
-                // Обновляем отображение на карте (если есть такая функция)
+                // Запускаем анимацию покупки и обновляем отображение
                 if (window.updateBuildingDisplay) {
                     window.updateBuildingDisplay('factory');
+                } else {
+                    closeBuildingPanel();
                 }
             } else {
                 if (window.showNotification) {
@@ -4528,12 +4888,11 @@
                     window.showNotification('🖨️ Типография куплена!', 'success');
                 }
                 
-                // Закрываем панель
-                closeBuildingPanel();
-                
-                // Обновляем отображение на карте (если есть такая функция)
+                // Запускаем анимацию покупки и обновляем отображение
                 if (window.updateBuildingDisplay) {
                     window.updateBuildingDisplay('print');
+                } else {
+                    closeBuildingPanel();
                 }
             } else {
                 if (window.showNotification) {
@@ -5201,12 +5560,11 @@
                     window.showNotification('📮 Почта куплена!', 'success');
                 }
                 
-                // Закрываем панель
-                closeBuildingPanel();
-                
-                // Обновляем отображение на карте (если есть такая функция)
+                // Запускаем анимацию покупки и обновляем отображение
                 if (window.updateBuildingDisplay) {
                     window.updateBuildingDisplay('storage');
+                } else {
+                    closeBuildingPanel();
                 }
             } else {
                 if (window.showNotification) {

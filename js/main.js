@@ -1509,12 +1509,17 @@ window.purchaseBuildingFromCity = function(buildingKey, buildingName, cost) {
         return;
     }
     
+    let purchaseHandledByMainMenuAnimation = false;
+    
     // Вызываем соответствующие функции покупки из main-menu.js
     if (buildingKey === 'factory' && window.buyFactory) {
+        purchaseHandledByMainMenuAnimation = true;
         window.buyFactory();
     } else if (buildingKey === 'print' && window.buyPrint) {
+        purchaseHandledByMainMenuAnimation = true;
         window.buyPrint();
     } else if (buildingKey === 'storage' && window.buyStorage) {
+        purchaseHandledByMainMenuAnimation = true;
         window.buyStorage();
     } else {
         // Общая логика покупки для других зданий
@@ -1557,7 +1562,7 @@ window.purchaseBuildingFromCity = function(buildingKey, buildingName, cost) {
     if (typeof window.updateBuildingZones === 'function') {
         window.updateBuildingZones();
     }
-    if (typeof window.notifyMapBuildingPurchased === 'function') {
+    if (!purchaseHandledByMainMenuAnimation && typeof window.notifyMapBuildingPurchased === 'function') {
         window.notifyMapBuildingPurchased(buildingKey);
     }
     

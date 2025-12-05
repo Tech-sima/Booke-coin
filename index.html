@@ -946,12 +946,18 @@
 
     // Уведомление интерактивной карты о покупке здания
     // Для чистой HTML-карты: мгновенное обновление зданий после покупки
-    window.notifyMapBuildingPurchased = function(key){
+    window.notifyMapBuildingPurchased = function(key, options){
         try{
+            if(window.playBuildingPurchaseSequence){
+                window.playBuildingPurchaseSequence(key, options || {});
+                return;
+            }
             if(window.pureMap && typeof window.pureMap.showBuilding==='function'){
                 window.pureMap.showBuilding(key);
             }
-        }catch(e){}
+        }catch(e){
+            console.warn('notifyMapBuildingPurchased error', e);
+        }
     };
     </script>
 
