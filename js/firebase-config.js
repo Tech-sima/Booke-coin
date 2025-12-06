@@ -3,11 +3,11 @@
 // You can safely keep this file out of version control by duplicating it
 // to firebase-config.local.js and loading that instead.
 window.firebaseConfig = window.firebaseConfig || {
-    apiKey: 'YOUR_API_KEY',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-    messagingSenderId: '000000000000',
-    appId: '1:000000000000:web:0000000000000000000000'
+    apiKey: 'AIzaSyCLjDK6p87_VtTHlk4MfIb6qFI5e6RGb7A',
+    authDomain: 'booke-coin-6c76b.firebaseapp.com',
+    projectId: 'booke-coin-6c76b',
+    storageBucket: 'booke-coin-6c76b.firebasestorage.app',
+    messagingSenderId: '709242440868',
+    appId: '1:709242440868:web:748275427a9a58d3f3ea31'
 };
 
