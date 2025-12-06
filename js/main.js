@@ -286,12 +286,22 @@ function updateProfileWithTelegram() {
     
     // Обновляем ник
     const nickname = document.getElementById('profile-nickname');
-    if (nickname && telegramUser.username) {
-        nickname.textContent = `@${telegramUser.username}`;
-    } else if (nickname && telegramUser.first_name) {
-        nickname.textContent = telegramUser.first_name;
+    let profileName = '';
+    if (telegramUser.username) {
+        profileName = `@${telegramUser.username}`;
+    } else if (telegramUser.first_name) {
+        profileName = telegramUser.first_name;
         if (telegramUser.last_name) {
-            nickname.textContent += ` ${telegramUser.last_name}`;
+            profileName += ` ${telegramUser.last_name}`;
+        }
+    }
+    if (nickname && profileName) {
+        nickname.textContent = profileName;
+    }
+    if (profileName) {
+        const storedName = localStorage.getItem('profile.username');
+        if (storedName !== profileName) {
+            localStorage.setItem('profile.username', profileName);
         }
     }
 }

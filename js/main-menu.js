@@ -169,7 +169,16 @@
     let tasksFirstVisit = localStorage.getItem('tasksFirstVisit') === 'true';
     
     // Данные зданий (хранятся в localStorage)
-    let buildingsData = JSON.parse(localStorage.getItem('buildingsData')) || {
+    const storedBuildingsDataRaw = localStorage.getItem('buildingsData');
+    let buildingsData;
+    try {
+        buildingsData = storedBuildingsDataRaw ? JSON.parse(storedBuildingsDataRaw) : null;
+    } catch (error) {
+        console.warn('buildingsData parse error, using defaults', error);
+        buildingsData = null;
+    }
+    if (!buildingsData) {
+        buildingsData = {
         'print': { 
             level: 1, 
             income: 5000, 
@@ -218,7 +227,9 @@
             purchaseCost: 0,
             name: 'Библиотека'
         }
-    };
+        };
+        localStorage.setItem('buildingsData', JSON.stringify(buildingsData));
+    }
     
     // Функция сохранения данных
     function saveBuildingsData() {
