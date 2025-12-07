@@ -772,7 +772,7 @@ function updateProgressVisual(){
 }
 
 // BALANCE helpers + persistence
-function getBalance(){return parseFloat(localStorage.getItem('balance')||'100');}
+function getBalance(){return parseFloat(localStorage.getItem('balance')||'10000');}
 function setBalance(v){
     localStorage.setItem('balance',v);
     const moneyAmount = document.getElementById('money-amount');
